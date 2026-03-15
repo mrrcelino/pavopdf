@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+:root {
+  --color-teal:  #1B7A8A;
+  --color-peach: #E8956A;
+  --color-amber: #D4A017;
+  --color-cream: #F9F5F0;
+}
