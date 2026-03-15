@@ -1,6 +1,6 @@
 pub mod error;
 pub mod storage;   // Task 4-5
-// pub mod pipeline;  // Task 6
+pub mod pipeline;   // Task 6
 // pub mod commands;  // Task 7
 // pub mod tools;     // Task 7
 
