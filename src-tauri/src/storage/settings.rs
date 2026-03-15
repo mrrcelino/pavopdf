@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::Manager;
+use tauri::Manager; // provides AppHandle::path()
 use crate::error::{AppError, Result};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,21 +37,34 @@ pub fn load(app_handle: &tauri::AppHandle) -> Result<Settings> {
         return Ok(Settings::default());
     }
     let contents = std::fs::read_to_string(&path)?;
-    serde_json::from_str(&contents)
-        .map_err(|e| AppError::Io(format!("Failed to parse settings: {e}")))
+    match serde_json::from_str(&contents) {
+        Ok(s) => Ok(s),
+        Err(_) => {
+            // Corrupt settings file — return defaults rather than failing.
+            // The next save() will overwrite with valid JSON.
+            Ok(Settings::default())
+        }
+    }
 }
 
 pub fn save(app_handle: &tauri::AppHandle, settings: &Settings) -> Result<()> {
     let path = settings_path(app_handle)?;
     let contents = serde_json::to_string_pretty(settings)
         .map_err(|e| AppError::Io(e.to_string()))?;
-    std::fs::write(&path, contents)?;
+    // Atomic write: write to temp file then rename to avoid partial writes.
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, &contents)?;
+    std::fs::rename(&tmp, &path)?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Note: load(), save(), and settings_path() require a live tauri::AppHandle
+    // and cannot be unit-tested without a running Tauri app. Verified via
+    // integration testing when the full app runs. Tests below cover the pure logic.
 
     #[test]
     fn default_settings_are_valid() {

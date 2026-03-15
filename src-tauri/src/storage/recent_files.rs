@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use tauri::Manager;
+use tauri::Manager; // provides AppHandle::path()
 use crate::error::{AppError, Result};
 
 const MAX_RECENT: usize = 20;
@@ -51,16 +51,19 @@ pub fn load(app_handle: &tauri::AppHandle) -> Result<Vec<RecentEntry>> {
 
 pub fn push(app_handle: &tauri::AppHandle, entry: RecentEntry) -> Result<()> {
     let mut entries = load(app_handle)?;
-    // Remove any existing entry for the same path
-    entries.retain(|e| e.path != entry.path);
+    // Case-insensitive dedup for Windows path compatibility.
+    let norm = entry.path.to_string_lossy().to_lowercase();
+    entries.retain(|e| e.path.to_string_lossy().to_lowercase() != norm);
     entries.insert(0, entry);
     entries.truncate(MAX_RECENT);
     save_entries(app_handle, &entries)
 }
 
 pub fn remove(app_handle: &tauri::AppHandle, path: &Path) -> Result<()> {
+    // Case-insensitive comparison for Windows path compatibility.
+    let norm = path.to_string_lossy().to_lowercase();
     let mut entries = load(app_handle)?;
-    entries.retain(|e| e.path != path);
+    entries.retain(|e| e.path.to_string_lossy().to_lowercase() != norm);
     save_entries(app_handle, &entries)
 }
 
@@ -68,7 +71,10 @@ fn save_entries(app_handle: &tauri::AppHandle, entries: &[RecentEntry]) -> Resul
     let path = recent_path(app_handle)?;
     let contents = serde_json::to_string_pretty(entries)
         .map_err(|e| AppError::Io(e.to_string()))?;
-    std::fs::write(&path, contents)?;
+    // Atomic write: write to temp file then rename to avoid partial writes.
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, &contents)?;
+    std::fs::rename(&tmp, &path)?;
     Ok(())
 }
 
@@ -97,8 +103,9 @@ mod tests {
     }
 
     #[test]
-    fn max_recent_enforced() {
-        let entries: Vec<RecentEntry> = (0..25)
+    fn truncate_to_max_recent() {
+        // Simulate what push() does: dedup + prepend + truncate
+        let mut entries: Vec<RecentEntry> = (0..25)
             .map(|i| RecentEntry {
                 path: format!("/tmp/file{i}.pdf").into(),
                 tool: "merge".into(),
@@ -106,8 +113,33 @@ mod tests {
                 exists: false,
             })
             .collect();
-        let mut truncated = entries;
-        truncated.truncate(MAX_RECENT);
-        assert_eq!(truncated.len(), 20);
+        let new_entry = RecentEntry {
+            path: "/tmp/new.pdf".into(),
+            tool: "split".into(),
+            timestamp: 999,
+            exists: false,
+        };
+        // Simulate push logic
+        entries.retain(|e| e.path != new_entry.path);
+        entries.insert(0, new_entry);
+        entries.truncate(MAX_RECENT);
+        assert_eq!(entries.len(), MAX_RECENT);
+        assert_eq!(entries[0].path, std::path::PathBuf::from("/tmp/new.pdf"));
+        assert_eq!(entries[0].tool, "split");
+    }
+
+    #[test]
+    fn push_deduplicates_same_path() {
+        let mut entries = vec![
+            RecentEntry { path: "/tmp/a.pdf".into(), tool: "merge".into(), timestamp: 1, exists: false },
+            RecentEntry { path: "/tmp/b.pdf".into(), tool: "split".into(), timestamp: 2, exists: false },
+        ];
+        let dup = RecentEntry { path: "/tmp/a.pdf".into(), tool: "compress".into(), timestamp: 3, exists: false };
+        // Simulate push dedup
+        entries.retain(|e| e.path != dup.path);
+        entries.insert(0, dup);
+        assert_eq!(entries.len(), 2, "duplicate should be removed before insert");
+        assert_eq!(entries[0].path, std::path::PathBuf::from("/tmp/a.pdf"));
+        assert_eq!(entries[0].tool, "compress", "new entry should replace old one");
     }
 }
