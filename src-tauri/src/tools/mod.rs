@@ -1,10 +1,10 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use crate::error::Result;
 use crate::pipeline::{temp::TempStage, progress};
 use tauri::AppHandle;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Tool {
     Merge, Split, Compress, Rotate, Reorder, Remove,

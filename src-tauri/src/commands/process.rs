@@ -17,6 +17,8 @@ pub async fn open_file_dialog(app: AppHandle, multiple: bool) -> Result<Vec<Path
             .map(|files| {
                 files
                     .into_iter()
+                    // TODO: handle FilePath::Url variant for future mobile support
+                    // On desktop (Windows/macOS/Linux) rfd always produces Path variants, so this is safe
                     .filter_map(|f| f.into_path().ok())
                     .collect()
             })
