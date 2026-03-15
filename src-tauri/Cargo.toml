@@ -1,16 +1,9 @@
 [package]
 name = "pavopdf"
 version = "0.1.0"
-description = "Free, open-source, offline PDF tools"
-authors = []
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "pavopdf_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
@@ -18,16 +11,28 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
+
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
+tokio = { version = "1", features = ["full"] }
+tempfile = "3"
+anyhow = "1"
+thiserror = "1"
+
+lopdf = "0.32"
+pdfium-render = "0.8"
+image = { version = "0.25", features = ["jpeg", "png", "webp"] }
+printpdf = "0.7"
+docx-rs = "0.4"
+calamine = { version = "0.24", features = ["dates"] }
+quick-xml = { version = "0.36", features = ["serialize"] }
+zip = "2"
+
 [profile.release]
-codegen-units = 1
-lto = true
 opt-level = "s"
-panic = "abort"
 strip = true
