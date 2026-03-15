@@ -1,4 +1,5 @@
 use std::path::Path;
+use serde::Serialize;
 use crate::error::{AppError, Result};
 
 const PDF_MAGIC: &[u8] = b"%PDF";
@@ -6,13 +7,13 @@ const WARN_SIZE_BYTES: u64 = 500 * 1024 * 1024;   // 500 MB
 const BLOCK_SIZE_BYTES: u64 = 2 * 1024 * 1024 * 1024; // 2 GB
 const OCR_WARN_SIZE_BYTES: u64 = 50 * 1024 * 1024; // 50 MB
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ValidationWarning {
     pub kind: WarningKind,
     pub message: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum WarningKind {
     LargeFile,
     OcrLargeFile,
@@ -115,7 +116,8 @@ mod tests {
 
     #[test]
     fn ocr_tool_gets_extra_warning_for_large_file() {
-        // Writes ~51MB to disk — the OCR warning threshold is 50MB
+        // Writes ~51MB to disk — the OCR warning threshold is 50MB.
+        // To skip in CI with limited disk: cargo test -- --skip ocr_tool_gets_extra_warning
         let f = make_pdf_file(OCR_WARN_SIZE_BYTES + 1024);
         let warnings = validate_pdf(f.path(), "ocr").unwrap();
         let has_ocr_warning = warnings.iter().any(|w| matches!(w.kind, WarningKind::OcrLargeFile));
