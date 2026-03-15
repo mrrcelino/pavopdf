@@ -7,6 +7,7 @@
     "core:default",
     "dialog:default",
     "fs:default",
+    "core:path:default",
     "shell:default"
   ]
 }
