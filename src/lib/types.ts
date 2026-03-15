@@ -30,7 +30,7 @@ export interface CategoryMeta {
 
 export interface RecentEntry {
   path: string;
-  tool: string;
+  tool: Tool;
   timestamp: number;
   exists: boolean;
 }
