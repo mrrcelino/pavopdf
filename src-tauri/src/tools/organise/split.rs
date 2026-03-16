@@ -26,6 +26,12 @@ pub fn parse_range(range_str: &str, total_pages: usize) -> Result<Vec<usize>> {
                 AppError::Validation(format!("Invalid page number: '{}'", end_str.trim()))
             })?;
 
+            if start == 0 || end == 0 {
+                return Err(AppError::Validation(format!(
+                    "Page numbers must be 1 or greater in range '{segment}'"
+                )));
+            }
+
             if start > total_pages || end > total_pages {
                 return Err(AppError::Validation(format!(
                     "Page range {}-{} exceeds total page count {}",
@@ -46,6 +52,10 @@ pub fn parse_range(range_str: &str, total_pages: usize) -> Result<Vec<usize>> {
             let page = segment.parse::<usize>().map_err(|_| {
                 AppError::Validation(format!("Invalid page number: '{}'", segment))
             })?;
+
+            if page == 0 {
+                return Err(AppError::Validation("Page number must be 1 or greater".into()));
+            }
 
             if page > total_pages {
                 return Err(AppError::Validation(format!(
@@ -73,7 +83,7 @@ pub fn chunk_by_n(pages: &[usize], n: usize) -> Vec<Vec<usize>> {
 
 /// Derive the output filename stem for a split chunk.
 /// E.g. `/tmp/report.pdf` with chunk_index 1 → `"report_split_1"`.
-pub fn output_stem_for_chunk(input: &PathBuf, chunk_index: usize) -> String {
+pub fn output_stem_for_chunk(input: &Path, chunk_index: usize) -> String {
     let stem = input
         .file_stem()
         .and_then(|s| s.to_str())
@@ -110,7 +120,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         AppError::Validation(msg)
     })?;
 
-    let _ = crate::pipeline::validate::validate_pdf(input_path, "split");
+    crate::pipeline::validate::validate_pdf(input_path, "split")?;
 
     emit_progress(&app, &op_id, 5, "Loading document\u{2026}");
 
@@ -128,7 +138,13 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
             .get("every_n_pages")
             .and_then(|v| v.as_u64())
         {
-            chunk_by_n(&(1..=total_pages).collect::<Vec<_>>(), n as usize)
+            let n = n as usize;
+            if n == 0 {
+                let msg = "every_n_pages must be at least 1".to_string();
+                emit_error(&app, &op_id, &msg);
+                return Err(AppError::Validation(msg));
+            }
+            chunk_by_n(&(1..=total_pages).collect::<Vec<_>>(), n)
         } else {
             let msg = "Split requires 'range' or 'every_n_pages' option".to_string();
             emit_error(&app, &op_id, &msg);
