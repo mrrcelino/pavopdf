@@ -251,7 +251,7 @@ mod tests {
     fn preset_from_str_small() {
         let p = CompressPreset::from_str("small").unwrap();
         assert_eq!(p.dpi, 72);
-        assert!(p.quality <= 60);
+        assert_eq!(p.quality, 55);
     }
 
     #[test]
