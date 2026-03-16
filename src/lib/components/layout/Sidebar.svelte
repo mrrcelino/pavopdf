@@ -12,8 +12,7 @@
 
 <aside
   class="h-full flex flex-col flex-shrink-0 transition-all duration-200 overflow-hidden"
-  class:w-12={collapsed}
-  style="background: #1B7A8A; {!collapsed ? 'width: 120px;' : ''}"
+  style="background: #1B7A8A; width: {collapsed ? '48px' : '120px'};"
 >
   <!-- Logo -->
   <div class="px-3 py-3 border-b border-white/10 flex items-center gap-2">
@@ -27,6 +26,7 @@
   <button
     onclick={() => activeToolStore.goHome()}
     class="px-3 py-2 text-white/50 text-xs hover:text-white/80 text-left"
+    aria-label="Go home"
   >
     {collapsed ? '⌂' : '← Home'}
   </button>
@@ -49,6 +49,7 @@
             activeToolStore.tool === tool.id ? 'text-white' : 'text-white/60',
           ].join(' ')}
           style={activeToolStore.tool === tool.id ? 'background: rgba(255,255,255,0.15);' : ''}
+          aria-label={tool.label}
           title={collapsed ? tool.label : undefined}
         >
           <span class="text-sm flex-shrink-0">{tool.icon}</span>

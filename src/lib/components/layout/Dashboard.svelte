@@ -84,6 +84,7 @@
                 <button
                   onclick={() => recentFilesStore.remove(entry.path)}
                   class="text-xs text-stone-400 hover:text-red-500"
+                  aria-label="Remove from recent files"
                 >✕</button>
               {/if}
             </div>

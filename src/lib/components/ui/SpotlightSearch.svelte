@@ -22,15 +22,17 @@
   }
 </script>
 
-<!-- Backdrop -->
+<!-- Backdrop — no dialog role here, just a dismiss target -->
 <div
   class="fixed inset-0 bg-black/30 z-50 flex items-start justify-center pt-24"
   onclick={onClose}
-  role="dialog"
-  aria-modal="true"
 >
+  <!-- This is the actual dialog -->
   <div
     class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Search tools"
     onclick={(e) => e.stopPropagation()}
   >
     <div class="flex items-center gap-3 px-4 py-3 border-b border-stone-100">

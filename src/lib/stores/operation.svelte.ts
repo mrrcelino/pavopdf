@@ -1,9 +1,9 @@
 import { listen } from '@tauri-apps/api/event';
-import type { ProgressEvent } from '../types';
+import type { ProgressEvent, Tool } from '../types';
 
 interface Operation {
   id: string;
-  tool: string;
+  tool: Tool;
   percent: number;
   message: string;
   status: 'running' | 'done' | 'error';
@@ -16,7 +16,7 @@ export const operationStore = {
   get all() { return [...operations.values()]; },
   get(id: string) { return operations.get(id); },
 
-  start(id: string, tool: string) {
+  start(id: string, tool: Tool) {
     const updated = new Map(operations);
     updated.set(id, { id, tool, percent: 0, message: 'Starting...', status: 'running' });
     operations = updated;
