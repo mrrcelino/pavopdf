@@ -35,9 +35,6 @@ pub fn merge_documents(docs: Vec<Document>) -> Result<Document> {
         // Find the pages node of the incoming document.
         let doc_pages_id = get_pages_id(&doc)?;
 
-        // Collect the page IDs from the incoming document (in order).
-        let _doc_page_ids: Vec<(u32, lopdf::ObjectId)> = doc.get_pages().into_iter().collect();
-
         // Move all objects from doc into base.
         for (id, obj) in doc.objects {
             base.objects.insert(id, obj);
@@ -80,9 +77,10 @@ pub fn merge_documents(docs: Vec<Document>) -> Result<Document> {
 
         // Update each incoming page's Parent to point to base's pages node.
         for &page_id in &doc_kids {
-            if let Ok(page) = base.get_dictionary_mut(page_id) {
-                page.set("Parent", Object::Reference(base_pages_id));
-            }
+            let page = base
+                .get_dictionary_mut(page_id)
+                .map_err(|e| AppError::Pdf(format!("Failed to update Parent for page {page_id:?}: {e}")))?;
+            page.set("Parent", Object::Reference(base_pages_id));
         }
 
         // Build new Kids array = base kids + doc kids.
@@ -156,7 +154,11 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     emit_progress(&app, &op_id, 50, "Merging documents\u{2026}");
     let mut merged = merge_documents(docs)?;
 
-    let stem = output_stem(&req.input_paths[0]);
+    let stem = if req.output_stem.is_empty() {
+        output_stem(&req.input_paths[0])
+    } else {
+        req.output_stem.clone()
+    };
     let out_filename = format!("{stem}.pdf");
     let stage = TempStage::new()?;
     let out_path = stage.output_path(&out_filename);
