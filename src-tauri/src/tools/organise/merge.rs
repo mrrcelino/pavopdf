@@ -3,10 +3,7 @@ use lopdf::{Document, Object};
 use tauri::AppHandle;
 
 use crate::error::{AppError, Result};
-use crate::pipeline::{
-    temp::TempStage,
-    progress::{emit_progress, emit_complete, emit_error},
-};
+use crate::pipeline::progress::{emit_progress, emit_complete, emit_error};
 use crate::tools::ProcessRequest;
 
 /// Merge a list of PDF documents into a single document.
@@ -154,14 +151,16 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     emit_progress(&app, &op_id, 50, "Merging documents\u{2026}");
     let mut merged = merge_documents(docs)?;
 
+    // Determine output path: save next to first input file
+    let first_input = &req.input_paths[0];
+    let out_dir = first_input.parent()
+        .ok_or_else(|| AppError::Validation("Cannot determine output directory from input path".into()))?;
     let stem = if req.output_stem.is_empty() {
-        output_stem(&req.input_paths[0])
+        output_stem(first_input)
     } else {
         req.output_stem.clone()
     };
-    let out_filename = format!("{stem}.pdf");
-    let stage = TempStage::new()?;
-    let out_path = stage.output_path(&out_filename);
+    let out_path = out_dir.join(format!("{stem}.pdf"));
 
     emit_progress(&app, &op_id, 80, "Writing output\u{2026}");
     merged
