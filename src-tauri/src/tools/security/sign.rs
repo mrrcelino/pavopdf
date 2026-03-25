@@ -31,8 +31,9 @@ pub fn build_signature_content_stream(x: f32, y: f32, width: f32, height: f32) -
     .into_bytes()
 }
 
-/// Decode a base64 PNG and re-encode as JPEG bytes, returning (jpeg_bytes, pixel_width, pixel_height).
-fn decode_png_to_jpeg(base64_png: &str) -> Result<(Vec<u8>, u32, u32)> {
+/// Decode a base64 PNG into raw RGB bytes plus an optional alpha channel.
+/// Returns `(rgb_bytes, alpha_bytes_option, pixel_width, pixel_height)`.
+fn decode_png_for_pdf(base64_png: &str) -> Result<(Vec<u8>, Option<Vec<u8>>, u32, u32)> {
     let png_bytes = STANDARD
         .decode(base64_png)
         .map_err(|e| AppError::Validation(format!("Invalid base64 in signature: {e}")))?;
@@ -41,27 +42,62 @@ fn decode_png_to_jpeg(base64_png: &str) -> Result<(Vec<u8>, u32, u32)> {
         .map_err(|e| AppError::Validation(format!("Invalid PNG image: {e}")))?;
 
     let (pw, ph) = (img.width(), img.height());
-    let rgb = img.to_rgb8();
+    let rgba = img.to_rgba8();
 
-    let mut jpeg_buf = std::io::Cursor::new(Vec::new());
-    rgb.write_to(&mut jpeg_buf, ImageFormat::Jpeg)
-        .map_err(|e| AppError::Pdf(format!("Failed to encode signature as JPEG: {e}")))?;
+    let pixel_count = (pw * ph) as usize;
+    let mut rgb_bytes = Vec::with_capacity(pixel_count * 3);
+    let mut alpha_bytes = Vec::with_capacity(pixel_count);
+    let mut has_transparency = false;
 
-    Ok((jpeg_buf.into_inner(), pw, ph))
+    for pixel in rgba.pixels() {
+        rgb_bytes.push(pixel[0]);
+        rgb_bytes.push(pixel[1]);
+        rgb_bytes.push(pixel[2]);
+        alpha_bytes.push(pixel[3]);
+        if pixel[3] < 255 {
+            has_transparency = true;
+        }
+    }
+
+    let alpha = if has_transparency { Some(alpha_bytes) } else { None };
+    Ok((rgb_bytes, alpha, pw, ph))
 }
 
-/// Add a JPEG image XObject to the document and return its ObjectId.
-fn add_jpeg_xobject(doc: &mut Document, jpeg_bytes: Vec<u8>, pixel_w: u32, pixel_h: u32) -> lopdf::ObjectId {
-    let img_dict = dictionary! {
+/// Add an image XObject (raw RGB with optional alpha SMask) to the document and return its ObjectId.
+fn add_image_xobject(
+    doc: &mut Document,
+    rgb_bytes: Vec<u8>,
+    alpha_bytes: Option<Vec<u8>>,
+    pixel_w: u32,
+    pixel_h: u32,
+) -> lopdf::ObjectId {
+    let smask_id = alpha_bytes.map(|alpha| {
+        let smask_dict = dictionary! {
+            "Type" => Object::Name(b"XObject".to_vec()),
+            "Subtype" => Object::Name(b"Image".to_vec()),
+            "Width" => Object::Integer(pixel_w as i64),
+            "Height" => Object::Integer(pixel_h as i64),
+            "ColorSpace" => Object::Name(b"DeviceGray".to_vec()),
+            "BitsPerComponent" => Object::Integer(8),
+        };
+        let smask_stream = Stream::new(smask_dict, alpha);
+        doc.add_object(Object::Stream(smask_stream))
+    });
+
+    let mut img_dict = dictionary! {
         "Type" => Object::Name(b"XObject".to_vec()),
         "Subtype" => Object::Name(b"Image".to_vec()),
         "Width" => Object::Integer(pixel_w as i64),
         "Height" => Object::Integer(pixel_h as i64),
         "ColorSpace" => Object::Name(b"DeviceRGB".to_vec()),
         "BitsPerComponent" => Object::Integer(8),
-        "Filter" => Object::Name(b"DCTDecode".to_vec()),
     };
-    let stream = Stream::new(img_dict, jpeg_bytes);
+
+    if let Some(smask_id) = smask_id {
+        img_dict.set("SMask", Object::Reference(smask_id));
+    }
+
+    let stream = Stream::new(img_dict, rgb_bytes);
     doc.add_object(Object::Stream(stream))
 }
 
@@ -102,6 +138,8 @@ fn ensure_xobject_sig0(
         .map_err(|e| AppError::Pdf(format!("Failed to get page dictionary: {e}")))?;
     if let Ok(Object::Dictionary(ref mut res_dict)) = page_dict.get_mut(b"Resources") {
         inject_xobject_sig0(res_dict, img_obj_id);
+    } else {
+        return Err(AppError::Pdf("Failed to access inline Resources dictionary for signature injection".into()));
     }
 
     Ok(())
@@ -184,7 +222,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     }
 
     emit_progress(&app, &op_id, 10, "Decoding signature image\u{2026}");
-    let (jpeg_bytes, pixel_w, pixel_h) = decode_png_to_jpeg(&opts.signature_png_base64)?;
+    let (rgb_bytes, alpha_bytes, pixel_w, pixel_h) = decode_png_for_pdf(&opts.signature_png_base64)?;
 
     emit_progress(&app, &op_id, 30, "Loading PDF\u{2026}");
     let mut doc = Document::load(input_path)
@@ -201,7 +239,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         })?;
 
     emit_progress(&app, &op_id, 50, "Embedding signature\u{2026}");
-    let img_obj_id = add_jpeg_xobject(&mut doc, jpeg_bytes, pixel_w, pixel_h);
+    let img_obj_id = add_image_xobject(&mut doc, rgb_bytes, alpha_bytes, pixel_w, pixel_h);
     ensure_xobject_sig0(&mut doc, page_id, img_obj_id)?;
 
     let content = build_signature_content_stream(opts.x, opts.y, opts.width, opts.height);
