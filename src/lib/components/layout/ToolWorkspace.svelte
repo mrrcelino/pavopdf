@@ -7,6 +7,11 @@
   import ReorderWorkspace from '../tools/organise/ReorderWorkspace.svelte';
   import RotateWorkspace from '../tools/organise/RotateWorkspace.svelte';
   import SplitWorkspace from '../tools/organise/SplitWorkspace.svelte';
+  import PdfToWordWorkspace from '../tools/convert_from/PdfToWordWorkspace.svelte';
+  import PdfToExcelWorkspace from '../tools/convert_from/PdfToExcelWorkspace.svelte';
+  import PdfToPptWorkspace from '../tools/convert_from/PdfToPptWorkspace.svelte';
+  import PdfToImageWorkspace from '../tools/convert_from/PdfToImageWorkspace.svelte';
+  import PdfToPdfaWorkspace from '../tools/convert_from/PdfToPdfaWorkspace.svelte';
 
   const tool = $derived(TOOLS.find(t => t.id === activeToolStore.tool));
 </script>
@@ -42,11 +47,31 @@
       <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <RemoveWorkspace />
       </div>
+    {:else if tool.id === 'pdf_to_word'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PdfToWordWorkspace />
+      </div>
+    {:else if tool.id === 'pdf_to_excel'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PdfToExcelWorkspace />
+      </div>
+    {:else if tool.id === 'pdf_to_ppt'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PdfToPptWorkspace />
+      </div>
+    {:else if tool.id === 'pdf_to_image'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PdfToImageWorkspace />
+      </div>
+    {:else if tool.id === 'pdf_to_pdfa'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PdfToPdfaWorkspace />
+      </div>
     {:else}
       <div class="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400">
         <div class="text-4xl mb-2">{tool.icon}</div>
         <p class="text-sm">{tool.description}</p>
-        <p class="text-xs mt-2 text-stone-300">Implementation coming in Plans 2-6</p>
+        <p class="text-xs mt-2 text-stone-300">Implementation coming in Plans 4-6</p>
       </div>
     {/if}
   {/if}
