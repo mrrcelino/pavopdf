@@ -8,7 +8,7 @@ use tauri::AppHandle;
 use zip::ZipArchive;
 
 use crate::error::{AppError, Result};
-use crate::pipeline::progress::{emit_complete, emit_progress};
+use crate::pipeline::progress::{emit_complete, emit_error, emit_progress};
 use crate::tools::ProcessRequest;
 
 /// Font size in pt.
@@ -99,10 +99,15 @@ fn extract_slide_number(name: &str) -> usize {
 
 pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     let op_id = req.operation_id.clone();
+    let emit_and_return = |err: AppError| {
+        emit_error(&app, &op_id, &err.to_string());
+        err
+    };
     let input_path = req
         .input_paths
         .first()
-        .ok_or_else(|| AppError::Validation("No input file".into()))?;
+        .ok_or_else(|| AppError::Validation("No input file".into()))
+        .map_err(|err| emit_and_return(err))?;
 
     let ext = input_path
         .extension()
@@ -110,87 +115,28 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         .unwrap_or("")
         .to_lowercase();
     if ext != "pptx" {
-        return Err(AppError::Validation(format!(
+        return Err(emit_and_return(AppError::Validation(format!(
             "Unsupported presentation format: .{ext} (only .pptx supported)"
-        )));
+        ))));
     }
 
     emit_progress(&app, &op_id, 5, "Opening presentation...");
 
-    let file = std::fs::File::open(input_path)?;
+    let file = std::fs::File::open(input_path)
+        .map_err(|e| AppError::Io(format!("Failed to open file: {e}")))
+        .map_err(|err| emit_and_return(err))?;
     let mut archive = ZipArchive::new(file)
-        .map_err(|e| AppError::Pdf(format!("Failed to open PPTX as ZIP: {e}")))?;
+        .map_err(|e| AppError::Pdf(format!("Failed to open PPTX as ZIP: {e}")))
+        .map_err(|err| emit_and_return(err))?;
 
     let slide_names = collect_slide_names(&archive);
     if slide_names.is_empty() {
-        return Err(AppError::Validation(
+        return Err(emit_and_return(AppError::Validation(
             "No slides found in presentation".into(),
-        ));
+        )));
     }
 
     let total_slides = slide_names.len();
-
-    // Create PDF — landscape A4
-    let (doc, first_page, first_layer) =
-        PdfDocument::new("PowerPoint to PDF", Mm(297.0), Mm(210.0), "Slide 1");
-    let font = doc
-        .add_builtin_font(BuiltinFont::Helvetica)
-        .map_err(|e| AppError::Pdf(format!("Failed to add font: {e}")))?;
-
-    for (idx, slide_name) in slide_names.iter().enumerate() {
-        let percent = 10 + (idx * 80) / total_slides.max(1);
-        emit_progress(
-            &app,
-            &op_id,
-            percent as u8,
-            &format!("Processing slide {}...", idx + 1),
-        );
-
-        let xml_data = {
-            let mut entry = archive
-                .by_name(slide_name)
-                .map_err(|e| AppError::Pdf(format!("Failed to read {slide_name}: {e}")))?;
-            let mut buf = Vec::new();
-            entry
-                .read_to_end(&mut buf)
-                .map_err(|e| AppError::Pdf(format!("Failed to read slide data: {e}")))?;
-            buf
-        };
-
-        let texts = extract_slide_text(&xml_data);
-        let lines: Vec<String> = texts
-            .iter()
-            .flat_map(|t| t.lines().map(String::from))
-            .filter(|l| !l.trim().is_empty())
-            .collect();
-
-        if idx == 0 {
-            // Use the already-created first page
-            let layer_ref = doc.get_page(first_page).get_layer(first_layer);
-            let mut y = TOP_Y;
-            for line in &lines {
-                if y < BOTTOM_Y {
-                    break;
-                }
-                layer_ref.use_text(line, FONT_SIZE, Mm(LEFT_X), Mm(y), &font);
-                y -= LINE_HEIGHT;
-            }
-        } else {
-            let label = format!("Slide {}", idx + 1);
-            let (page, layer) = doc.add_page(Mm(297.0), Mm(210.0), &label);
-            let layer_ref = doc.get_page(page).get_layer(layer);
-            let mut y = TOP_Y;
-            for line in &lines {
-                if y < BOTTOM_Y {
-                    break;
-                }
-                layer_ref.use_text(line, FONT_SIZE, Mm(LEFT_X), Mm(y), &font);
-                y -= LINE_HEIGHT;
-            }
-        }
-    }
-
-    emit_progress(&app, &op_id, 90, "Saving PDF...");
 
     let stem = if req.output_stem.is_empty() {
         output_stem(input_path)
@@ -199,13 +145,82 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     };
     let out_dir = input_path
         .parent()
-        .ok_or_else(|| AppError::Validation("Cannot determine output directory".into()))?;
+        .ok_or_else(|| AppError::Validation("Cannot determine output directory".into()))
+        .map_err(|err| emit_and_return(err))?;
     let out_path = out_dir.join(format!("{stem}.pdf"));
 
-    let pdf_bytes = doc
-        .save_to_bytes()
-        .map_err(|e| AppError::Pdf(format!("Failed to save PDF: {e}")))?;
-    std::fs::write(&out_path, pdf_bytes)?;
+    // Block scope so PdfDocumentReference (!Send) is dropped before .await
+    let pdf_bytes = {
+        let (doc, first_page, first_layer) =
+            PdfDocument::new("PowerPoint to PDF", Mm(297.0), Mm(210.0), "Slide 1");
+        let font = doc
+            .add_builtin_font(BuiltinFont::Helvetica)
+            .map_err(|e| AppError::Pdf(format!("Failed to add font: {e}")))
+            .map_err(|err| emit_and_return(err))?;
+
+        for (idx, slide_name) in slide_names.iter().enumerate() {
+            let percent = (10 + (idx * 80) / total_slides.max(1)).min(100);
+            emit_progress(
+                &app,
+                &op_id,
+                percent as u8,
+                &format!("Processing slide {}...", idx + 1),
+            );
+
+            let xml_data = {
+                let mut entry = archive
+                    .by_name(slide_name)
+                    .map_err(|e| AppError::Pdf(format!("Failed to read {slide_name}: {e}")))?;
+                let mut buf = Vec::new();
+                entry
+                    .read_to_end(&mut buf)
+                    .map_err(|e| AppError::Pdf(format!("Failed to read slide data: {e}")))?;
+                buf
+            };
+
+            let texts = extract_slide_text(&xml_data);
+            let lines: Vec<String> = texts
+                .iter()
+                .flat_map(|t| t.lines().map(String::from))
+                .filter(|l| !l.trim().is_empty())
+                .collect();
+
+            if idx == 0 {
+                // Use the already-created first page
+                let layer_ref = doc.get_page(first_page).get_layer(first_layer);
+                let mut y = TOP_Y;
+                for line in &lines {
+                    if y < BOTTOM_Y {
+                        break;
+                    }
+                    layer_ref.use_text(line, FONT_SIZE, Mm(LEFT_X), Mm(y), &font);
+                    y -= LINE_HEIGHT;
+                }
+            } else {
+                let label = format!("Slide {}", idx + 1);
+                let (page, layer) = doc.add_page(Mm(297.0), Mm(210.0), &label);
+                let layer_ref = doc.get_page(page).get_layer(layer);
+                let mut y = TOP_Y;
+                for line in &lines {
+                    if y < BOTTOM_Y {
+                        break;
+                    }
+                    layer_ref.use_text(line, FONT_SIZE, Mm(LEFT_X), Mm(y), &font);
+                    y -= LINE_HEIGHT;
+                }
+            }
+        }
+
+        emit_progress(&app, &op_id, 90, "Saving PDF...");
+
+        doc.save_to_bytes()
+            .map_err(|e| AppError::Pdf(format!("Failed to save PDF: {e}")))
+            .map_err(|err| emit_and_return(err))?
+    };
+
+    tokio::fs::write(&out_path, pdf_bytes).await
+        .map_err(|e| AppError::Io(format!("Failed to write PDF: {e}")))
+        .map_err(|err| emit_and_return(err))?;
 
     emit_complete(&app, &op_id);
     Ok(out_path)

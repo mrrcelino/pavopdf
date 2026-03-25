@@ -5,7 +5,7 @@ use printpdf::{BuiltinFont, IndirectFontRef, Mm, PdfDocument};
 use tauri::AppHandle;
 
 use crate::error::{AppError, Result};
-use crate::pipeline::progress::{emit_complete, emit_progress};
+use crate::pipeline::progress::{emit_complete, emit_error, emit_progress};
 use crate::tools::ProcessRequest;
 
 /// Maximum columns rendered per row before truncation.
@@ -43,10 +43,15 @@ fn cell_to_string(cell: &Data) -> String {
 
 pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     let op_id = req.operation_id.clone();
+    let emit_and_return = |err: AppError| {
+        emit_error(&app, &op_id, &err.to_string());
+        err
+    };
     let input_path = req
         .input_paths
         .first()
-        .ok_or_else(|| AppError::Validation("No input file".into()))?;
+        .ok_or_else(|| AppError::Validation("No input file".into()))
+        .map_err(|err| emit_and_return(err))?;
 
     // Validate extension
     let ext = input_path
@@ -55,68 +60,23 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         .unwrap_or("")
         .to_lowercase();
     if ext != "xlsx" && ext != "xls" && ext != "xlsb" && ext != "ods" {
-        return Err(AppError::Validation(format!(
+        return Err(emit_and_return(AppError::Validation(format!(
             "Unsupported spreadsheet format: .{ext}"
-        )));
+        ))));
     }
 
     emit_progress(&app, &op_id, 5, "Loading spreadsheet...");
 
     let mut workbook = open_workbook_auto(input_path)
-        .map_err(|e| AppError::Pdf(format!("Failed to open workbook: {e}")))?;
+        .map_err(|e| AppError::Pdf(format!("Failed to open workbook: {e}")))
+        .map_err(|err| emit_and_return(err))?;
 
     let sheet_names = workbook.sheet_names().to_owned();
     if sheet_names.is_empty() {
-        return Err(AppError::Validation("Workbook has no sheets".into()));
+        return Err(emit_and_return(AppError::Validation("Workbook has no sheets".into())));
     }
 
     let total_sheets = sheet_names.len();
-
-    // Create PDF document
-    let (doc, first_page, first_layer) =
-        PdfDocument::new("Excel to PDF", Mm(210.0), Mm(297.0), &sheet_names[0]);
-    let font = doc
-        .add_builtin_font(BuiltinFont::Helvetica)
-        .map_err(|e| AppError::Pdf(format!("Failed to add font: {e}")))?;
-
-    for (idx, name) in sheet_names.iter().enumerate() {
-        let percent = 10 + (idx * 80) / total_sheets.max(1);
-        emit_progress(
-            &app,
-            &op_id,
-            percent as u8,
-            &format!("Rendering sheet '{name}'..."),
-        );
-
-        let range = match workbook.worksheet_range(name) {
-            Ok(r) => r,
-            Err(_) => continue,
-        };
-
-        // For the first sheet, use the already-created page; for subsequent sheets, add a new page.
-        if idx == 0 {
-            render_sheet_to_page(
-                &doc,
-                first_page,
-                first_layer,
-                &range,
-                &font,
-            );
-        } else {
-            let rows: Vec<Vec<String>> = range
-                .rows()
-                .map(|row| {
-                    row.iter()
-                        .take(MAX_COLS)
-                        .map(cell_to_string)
-                        .collect()
-                })
-                .collect();
-            render_rows_to_new_pages(&doc, &rows, &font, name);
-        }
-    }
-
-    emit_progress(&app, &op_id, 90, "Saving PDF...");
 
     let stem = if req.output_stem.is_empty() {
         output_stem(input_path)
@@ -125,13 +85,66 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     };
     let out_dir = input_path
         .parent()
-        .ok_or_else(|| AppError::Validation("Cannot determine output directory".into()))?;
+        .ok_or_else(|| AppError::Validation("Cannot determine output directory".into()))
+        .map_err(|err| emit_and_return(err))?;
     let out_path = out_dir.join(format!("{stem}.pdf"));
 
-    let pdf_bytes = doc
-        .save_to_bytes()
-        .map_err(|e| AppError::Pdf(format!("Failed to save PDF: {e}")))?;
-    std::fs::write(&out_path, pdf_bytes)?;
+    // Block scope so PdfDocumentReference (!Send) is dropped before .await
+    let pdf_bytes = {
+        let (doc, first_page, first_layer) =
+            PdfDocument::new("Excel to PDF", Mm(210.0), Mm(297.0), &sheet_names[0]);
+        let font = doc
+            .add_builtin_font(BuiltinFont::Helvetica)
+            .map_err(|e| AppError::Pdf(format!("Failed to add font: {e}")))
+            .map_err(|err| emit_and_return(err))?;
+
+        for (idx, name) in sheet_names.iter().enumerate() {
+            let percent = (10 + (idx * 80) / total_sheets.max(1)).min(100);
+            emit_progress(
+                &app,
+                &op_id,
+                percent as u8,
+                &format!("Rendering sheet '{name}'..."),
+            );
+
+            let range = match workbook.worksheet_range(name) {
+                Ok(r) => r,
+                Err(_) => continue,
+            };
+
+            // For the first sheet, use the already-created page; for subsequent sheets, add a new page.
+            if idx == 0 {
+                render_sheet_to_page(
+                    &doc,
+                    first_page,
+                    first_layer,
+                    &range,
+                    &font,
+                );
+            } else {
+                let rows: Vec<Vec<String>> = range
+                    .rows()
+                    .map(|row| {
+                        row.iter()
+                            .take(MAX_COLS)
+                            .map(cell_to_string)
+                            .collect()
+                    })
+                    .collect();
+                render_rows_to_new_pages(&doc, &rows, &font, name);
+            }
+        }
+
+        emit_progress(&app, &op_id, 90, "Saving PDF...");
+
+        doc.save_to_bytes()
+            .map_err(|e| AppError::Pdf(format!("Failed to save PDF: {e}")))
+            .map_err(|err| emit_and_return(err))?
+    };
+
+    tokio::fs::write(&out_path, pdf_bytes).await
+        .map_err(|e| AppError::Io(format!("Failed to write PDF: {e}")))
+        .map_err(|err| emit_and_return(err))?;
 
     emit_complete(&app, &op_id);
     Ok(out_path)
