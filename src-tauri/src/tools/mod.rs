@@ -2,6 +2,8 @@ pub mod organise;
 pub mod convert_from;
 pub mod convert_to;
 pub mod edit;
+pub mod security;
+pub mod repair;
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -57,9 +59,12 @@ pub async fn run(
         Tool::Watermark   => edit::watermark::run(app, req).await,
         Tool::PageNumbers => edit::page_numbers::run(app, req).await,
         Tool::Redact      => edit::redact::run(app, req).await,
-        _ => Err(crate::error::AppError::Pdf(
-            format!("Tool '{:?}' not yet implemented — see Plan 6", req.tool)
-        )),
+        // Plan 6
+        Tool::Protect => security::protect::run(app, req).await,
+        Tool::Unlock  => security::unlock::run(app, req).await,
+        Tool::Sign    => security::sign::run(app, req).await,
+        Tool::Ocr     => repair::ocr::run(app, req).await,
+        Tool::Repair  => repair::repair::run(app, req).await,
     }?;
 
     Ok(output_path)
