@@ -1,5 +1,6 @@
 pub mod organise;
 pub mod convert_from;
+pub mod convert_to;
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -44,8 +45,14 @@ pub async fn run(
         Tool::PdfToPpt   => convert_from::to_ppt::run(app, req).await,
         Tool::PdfToImage => convert_from::to_image::run(app, req).await,
         Tool::PdfToPdfa  => convert_from::to_pdfa::run(app, req).await,
+        // Plan 4
+        Tool::WordToPdf  => convert_to::from_word::run(app, req).await,
+        Tool::ExcelToPdf => convert_to::from_excel::run(app, req).await,
+        Tool::PptToPdf   => convert_to::from_ppt::run(app, req).await,
+        Tool::ImageToPdf => convert_to::from_image::run(app, req).await,
+        Tool::HtmlToPdf  => convert_to::from_html::run(app, req).await,
         _ => Err(crate::error::AppError::Pdf(
-            format!("Tool '{:?}' not yet implemented — see Plans 4-6", req.tool)
+            format!("Tool '{:?}' not yet implemented — see Plans 5-6", req.tool)
         )),
     }?;
 
