@@ -17,6 +17,10 @@
   import PptToPdfWorkspace from '../tools/convert_to/PptToPdfWorkspace.svelte';
   import ImageToPdfWorkspace from '../tools/convert_to/ImageToPdfWorkspace.svelte';
   import HtmlToPdfWorkspace from '../tools/convert_to/HtmlToPdfWorkspace.svelte';
+  import MetadataWorkspace from '../tools/edit/MetadataWorkspace.svelte';
+  import WatermarkWorkspace from '../tools/edit/WatermarkWorkspace.svelte';
+  import PageNumbersWorkspace from '../tools/edit/PageNumbersWorkspace.svelte';
+  import RedactWorkspace from '../tools/edit/RedactWorkspace.svelte';
 
   const tool = $derived(TOOLS.find(t => t.id === activeToolStore.tool));
 </script>
@@ -91,6 +95,22 @@
     {:else if tool.id === 'html_to_pdf'}
       <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <HtmlToPdfWorkspace />
+      </div>
+    {:else if tool.id === 'edit'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <MetadataWorkspace />
+      </div>
+    {:else if tool.id === 'watermark'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <WatermarkWorkspace />
+      </div>
+    {:else if tool.id === 'page_numbers'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PageNumbersWorkspace />
+      </div>
+    {:else if tool.id === 'redact'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <RedactWorkspace />
       </div>
     {:else}
       <div class="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400">
