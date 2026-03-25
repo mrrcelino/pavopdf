@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use lopdf::{Document, Object};
+use lopdf::{Document, Object, ObjectId};
 use tauri::AppHandle;
 
 use crate::error::{AppError, Result};
@@ -114,16 +114,41 @@ fn apply_rotations(doc: &mut Document, page_numbers: &[usize], degrees: i32) -> 
     Ok(())
 }
 
-fn rotate_page(doc: &mut Document, page_id: lopdf::ObjectId, additional: i32) -> Result<()> {
+/// Resolve the effective /Rotate value for a page by walking up the page tree.
+/// PDF spec says /Rotate is inheritable from parent /Pages nodes.
+fn resolve_inherited_rotation(doc: &Document, page_id: ObjectId) -> i32 {
+    let mut current_id = page_id;
+    loop {
+        match doc.get_object(current_id) {
+            Ok(Object::Dictionary(dict)) => {
+                if let Ok(r) = dict.get(b"Rotate") {
+                    if let Ok(val) = r.as_i64() {
+                        return val as i32;
+                    }
+                }
+                // Walk up to parent
+                match dict.get(b"Parent") {
+                    Ok(parent_ref) => match parent_ref.as_reference() {
+                        Ok(parent_id) => current_id = parent_id,
+                        Err(_) => break,
+                    },
+                    Err(_) => break,
+                }
+            }
+            _ => break,
+        }
+    }
+    0 // Default: no rotation
+}
+
+fn rotate_page(doc: &mut Document, page_id: ObjectId, additional: i32) -> Result<()> {
+    // Resolve inherited rotation first (immutable borrow).
+    let current = resolve_inherited_rotation(doc, page_id);
+
+    // Now mutably set the new rotation on the page itself.
     let page = doc
         .get_dictionary_mut(page_id)
         .map_err(|e| AppError::Pdf(format!("Page object error: {e}")))?;
-
-    let current = page
-        .get(b"Rotate")
-        .ok()
-        .and_then(|value| value.as_i64().ok())
-        .unwrap_or(0) as i32;
 
     page.set(
         "Rotate",
@@ -133,7 +158,7 @@ fn rotate_page(doc: &mut Document, page_id: lopdf::ObjectId, additional: i32) ->
 }
 
 #[cfg(test)]
-pub fn rotate_page_direct(doc: &mut Document, page_id: lopdf::ObjectId, degrees: i32) -> Result<()> {
+pub fn rotate_page_direct(doc: &mut Document, page_id: ObjectId, degrees: i32) -> Result<()> {
     rotate_page(doc, page_id, degrees)
 }
 
@@ -312,5 +337,115 @@ mod tests {
         let req = make_request(json!({ "degrees": 45 }));
 
         assert!(validated_rotation(&req).is_err());
+    }
+
+    #[test]
+    fn resolve_inherited_rotation_from_parent_pages_node() {
+        // Build a document where /Rotate is on the /Pages node, not on the page itself.
+        let mut doc = Document::with_version("1.5");
+        let pages_id = doc.new_object_id();
+
+        let content = Stream::new(Dictionary::new(), b"BT ET".to_vec());
+        let content_id = doc.add_object(content);
+        let page = dictionary! {
+            "Type" => Object::Name(b"Page".to_vec()),
+            "Parent" => Object::Reference(pages_id),
+            "MediaBox" => Object::Array(vec![0.into(), 0.into(), 842.into(), 595.into()]),
+            "Contents" => Object::Reference(content_id),
+        };
+        let page_id = doc.add_object(page);
+
+        let pages = dictionary! {
+            "Type" => Object::Name(b"Pages".to_vec()),
+            "Kids" => Object::Array(vec![Object::Reference(page_id)]),
+            "Count" => Object::Integer(1),
+            "Rotate" => Object::Integer(90),
+        };
+        doc.objects.insert(pages_id, Object::Dictionary(pages));
+
+        let catalog = dictionary! {
+            "Type" => Object::Name(b"Catalog".to_vec()),
+            "Pages" => Object::Reference(pages_id),
+        };
+        let catalog_id = doc.add_object(catalog);
+        doc.trailer.set("Root", Object::Reference(catalog_id));
+
+        // The page itself has no /Rotate, but should inherit 90 from parent.
+        assert_eq!(resolve_inherited_rotation(&doc, page_id), 90);
+    }
+
+    #[test]
+    fn resolve_inherited_rotation_page_overrides_parent() {
+        // Page has its own /Rotate which should take precedence over parent.
+        let mut doc = Document::with_version("1.5");
+        let pages_id = doc.new_object_id();
+
+        let content = Stream::new(Dictionary::new(), b"BT ET".to_vec());
+        let content_id = doc.add_object(content);
+        let page = dictionary! {
+            "Type" => Object::Name(b"Page".to_vec()),
+            "Parent" => Object::Reference(pages_id),
+            "MediaBox" => Object::Array(vec![0.into(), 0.into(), 595.into(), 842.into()]),
+            "Contents" => Object::Reference(content_id),
+            "Rotate" => Object::Integer(180),
+        };
+        let page_id = doc.add_object(page);
+
+        let pages = dictionary! {
+            "Type" => Object::Name(b"Pages".to_vec()),
+            "Kids" => Object::Array(vec![Object::Reference(page_id)]),
+            "Count" => Object::Integer(1),
+            "Rotate" => Object::Integer(90),
+        };
+        doc.objects.insert(pages_id, Object::Dictionary(pages));
+
+        let catalog = dictionary! {
+            "Type" => Object::Name(b"Catalog".to_vec()),
+            "Pages" => Object::Reference(pages_id),
+        };
+        let catalog_id = doc.add_object(catalog);
+        doc.trailer.set("Root", Object::Reference(catalog_id));
+
+        // Page's own /Rotate (180) should win over parent's (90).
+        assert_eq!(resolve_inherited_rotation(&doc, page_id), 180);
+    }
+
+    #[test]
+    fn rotate_page_accounts_for_inherited_rotation() {
+        // Rotate a page that inherits /Rotate 90 from parent by an additional 90.
+        let mut doc = Document::with_version("1.5");
+        let pages_id = doc.new_object_id();
+
+        let content = Stream::new(Dictionary::new(), b"BT ET".to_vec());
+        let content_id = doc.add_object(content);
+        let page = dictionary! {
+            "Type" => Object::Name(b"Page".to_vec()),
+            "Parent" => Object::Reference(pages_id),
+            "MediaBox" => Object::Array(vec![0.into(), 0.into(), 842.into(), 595.into()]),
+            "Contents" => Object::Reference(content_id),
+        };
+        let page_id = doc.add_object(page);
+
+        let pages = dictionary! {
+            "Type" => Object::Name(b"Pages".to_vec()),
+            "Kids" => Object::Array(vec![Object::Reference(page_id)]),
+            "Count" => Object::Integer(1),
+            "Rotate" => Object::Integer(90),
+        };
+        doc.objects.insert(pages_id, Object::Dictionary(pages));
+
+        let catalog = dictionary! {
+            "Type" => Object::Name(b"Catalog".to_vec()),
+            "Pages" => Object::Reference(pages_id),
+        };
+        let catalog_id = doc.add_object(catalog);
+        doc.trailer.set("Root", Object::Reference(catalog_id));
+
+        rotate_page(&mut doc, page_id, 90).unwrap();
+
+        // Should be 90 (inherited) + 90 (additional) = 180, written on the page itself.
+        let page_dict = doc.get_dictionary(page_id).unwrap();
+        let rotation = page_dict.get(b"Rotate").unwrap().as_i64().unwrap();
+        assert_eq!(rotation, 180);
     }
 }
