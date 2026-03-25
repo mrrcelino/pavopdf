@@ -12,6 +12,11 @@
   import PdfToPptWorkspace from '../tools/convert_from/PdfToPptWorkspace.svelte';
   import PdfToImageWorkspace from '../tools/convert_from/PdfToImageWorkspace.svelte';
   import PdfToPdfaWorkspace from '../tools/convert_from/PdfToPdfaWorkspace.svelte';
+  import WordToPdfWorkspace from '../tools/convert_to/WordToPdfWorkspace.svelte';
+  import ExcelToPdfWorkspace from '../tools/convert_to/ExcelToPdfWorkspace.svelte';
+  import PptToPdfWorkspace from '../tools/convert_to/PptToPdfWorkspace.svelte';
+  import ImageToPdfWorkspace from '../tools/convert_to/ImageToPdfWorkspace.svelte';
+  import HtmlToPdfWorkspace from '../tools/convert_to/HtmlToPdfWorkspace.svelte';
 
   const tool = $derived(TOOLS.find(t => t.id === activeToolStore.tool));
 </script>
@@ -66,6 +71,26 @@
     {:else if tool.id === 'pdf_to_pdfa'}
       <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <PdfToPdfaWorkspace />
+      </div>
+    {:else if tool.id === 'word_to_pdf'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <WordToPdfWorkspace />
+      </div>
+    {:else if tool.id === 'excel_to_pdf'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <ExcelToPdfWorkspace />
+      </div>
+    {:else if tool.id === 'ppt_to_pdf'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <PptToPdfWorkspace />
+      </div>
+    {:else if tool.id === 'image_to_pdf'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <ImageToPdfWorkspace />
+      </div>
+    {:else if tool.id === 'html_to_pdf'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <HtmlToPdfWorkspace />
       </div>
     {:else}
       <div class="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400">
