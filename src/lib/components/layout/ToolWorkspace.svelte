@@ -21,6 +21,11 @@
   import WatermarkWorkspace from '../tools/edit/WatermarkWorkspace.svelte';
   import PageNumbersWorkspace from '../tools/edit/PageNumbersWorkspace.svelte';
   import RedactWorkspace from '../tools/edit/RedactWorkspace.svelte';
+  import ProtectWorkspace from '../tools/security/ProtectWorkspace.svelte';
+  import UnlockWorkspace from '../tools/security/UnlockWorkspace.svelte';
+  import SignWorkspace from '../tools/security/SignWorkspace.svelte';
+  import OcrWorkspace from '../tools/repair/OcrWorkspace.svelte';
+  import RepairWorkspace from '../tools/repair/RepairWorkspace.svelte';
 
   const tool = $derived(TOOLS.find(t => t.id === activeToolStore.tool));
 </script>
@@ -111,6 +116,26 @@
     {:else if tool.id === 'redact'}
       <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <RedactWorkspace />
+      </div>
+    {:else if tool.id === 'protect'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <ProtectWorkspace />
+      </div>
+    {:else if tool.id === 'unlock'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <UnlockWorkspace />
+      </div>
+    {:else if tool.id === 'sign'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <SignWorkspace />
+      </div>
+    {:else if tool.id === 'ocr'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <OcrWorkspace />
+      </div>
+    {:else if tool.id === 'repair'}
+      <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <RepairWorkspace />
       </div>
     {:else}
       <div class="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400">
