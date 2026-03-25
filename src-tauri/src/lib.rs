@@ -18,6 +18,8 @@ pub fn run() {
             commands::process::process_pdf,
             commands::process::open_file_dialog,
             commands::process::save_file_dialog,
+            commands::thumbnails::get_page_count,
+            commands::thumbnails::render_page_thumbnail,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");

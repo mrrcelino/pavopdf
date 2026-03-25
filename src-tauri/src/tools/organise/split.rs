@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use lopdf::Document;
 use tauri::AppHandle;
 
@@ -7,15 +7,22 @@ use crate::pipeline::progress::{emit_progress, emit_complete, emit_error};
 use crate::tools::ProcessRequest;
 
 /// Parse a comma-separated range string like "1-3,5,7-9" into a sorted, deduplicated
-/// list of 1-based page numbers. Returns an error if any page exceeds total_pages or
-/// if the syntax is invalid.
+/// list of 1-based page numbers. Returns an error if any page exceeds `total_pages`
+/// or if the syntax is invalid.
 pub fn parse_range(range_str: &str, total_pages: usize) -> Result<Vec<usize>> {
+    let range_str = range_str.trim();
+    if range_str.is_empty() {
+        return Err(AppError::Validation("Split range cannot be empty".into()));
+    }
+
     let mut pages: Vec<usize> = Vec::new();
 
     for segment in range_str.split(',') {
         let segment = segment.trim();
         if segment.is_empty() {
-            continue;
+            return Err(AppError::Validation(
+                "Split range contains an empty segment".into(),
+            ));
         }
 
         if let Some((start_str, end_str)) = segment.split_once('-') {
@@ -78,17 +85,29 @@ pub fn parse_range(range_str: &str, total_pages: usize) -> Result<Vec<usize>> {
 /// Split a slice of page numbers into chunks of size n.
 /// The last chunk may be smaller than n.
 pub fn chunk_by_n(pages: &[usize], n: usize) -> Vec<Vec<usize>> {
+    if n == 0 {
+        return Vec::new();
+    }
     pages.chunks(n).map(|c| c.to_vec()).collect()
 }
 
 /// Derive the output filename stem for a split chunk.
 /// E.g. `/tmp/report.pdf` with chunk_index 1 → `"report_split_1"`.
-pub fn output_stem_for_chunk(input: &Path, chunk_index: usize) -> String {
+pub fn output_stem_for_chunk(input: &PathBuf, chunk_index: usize) -> String {
     let stem = input
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("document");
     format!("{stem}_split_{chunk_index}")
+}
+
+fn normalize_output_stem(output_stem: &str) -> String {
+    let trimmed = output_stem.trim();
+    if trimmed.to_ascii_lowercase().ends_with(".pdf") {
+        trimmed[..trimmed.len() - 4].to_string()
+    } else {
+        trimmed.to_string()
+    }
 }
 
 /// Extract a subset of pages from a document by cloning it and removing all pages
@@ -113,6 +132,16 @@ fn extract_pages(doc: &Document, page_numbers: &[usize]) -> Result<Document> {
 
 pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
     let op_id = req.operation_id.clone();
+    let emit_and_return = |err: AppError| {
+        emit_error(&app, &op_id, &err.to_string());
+        err
+    };
+
+    if req.input_paths.len() != 1 {
+        let msg = "Split requires exactly one input file".to_string();
+        emit_error(&app, &op_id, &msg);
+        return Err(AppError::Validation(msg));
+    }
 
     let input_path = req.input_paths.first().ok_or_else(|| {
         let msg = "Split requires at least one input file".to_string();
@@ -120,42 +149,59 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         AppError::Validation(msg)
     })?;
 
-    crate::pipeline::validate::validate_pdf(input_path, "split")?;
+    crate::pipeline::validate::validate_pdf(input_path, "split")
+        .map_err(|err| emit_and_return(err))?;
 
     emit_progress(&app, &op_id, 5, "Loading document\u{2026}");
 
     let doc = Document::load(input_path)
-        .map_err(|e| AppError::Pdf(format!("Failed to load {:?}: {e}", input_path)))?;
+        .map_err(|e| AppError::Pdf(format!("Failed to load {:?}: {e}", input_path)))
+        .map_err(|err| emit_and_return(err))?;
 
     let total_pages = doc.get_pages().len();
 
-    // Determine chunks from options
-    let chunks: Vec<Vec<usize>> =
-        if let Some(range_str) = req.options.get("range").and_then(|v| v.as_str()) {
-            vec![parse_range(range_str, total_pages)?]
-        } else if let Some(n) = req
-            .options
-            .get("every_n_pages")
-            .and_then(|v| v.as_u64())
-        {
-            let n = n as usize;
-            if n == 0 {
-                let msg = "every_n_pages must be at least 1".to_string();
-                emit_error(&app, &op_id, &msg);
-                return Err(AppError::Validation(msg));
-            }
-            chunk_by_n(&(1..=total_pages).collect::<Vec<_>>(), n)
-        } else {
-            let msg = "Split requires 'range' or 'every_n_pages' option".to_string();
+    // Determine chunks from options.
+    let range_opt = req.options.get("range").and_then(|v| v.as_str());
+    let every_n_opt = req.options.get("every_n_pages").and_then(|v| v.as_u64());
+
+    if range_opt.is_some() && every_n_opt.is_some() {
+        let msg = "Split accepts either 'range' or 'every_n_pages', not both".to_string();
+        emit_error(&app, &op_id, &msg);
+        return Err(AppError::Validation(msg));
+    }
+
+    let chunks: Vec<Vec<usize>> = if let Some(range_str) = range_opt {
+        vec![parse_range(range_str, total_pages).map_err(|err| emit_and_return(err))?]
+    } else if let Some(n) = every_n_opt {
+        let n = n as usize;
+        if n == 0 {
+            let msg = "every_n_pages must be at least 1".to_string();
             emit_error(&app, &op_id, &msg);
             return Err(AppError::Validation(msg));
-        };
+        }
+        chunk_by_n(&(1..=total_pages).collect::<Vec<_>>(), n)
+    } else {
+        let msg = "Split requires 'range' or 'every_n_pages' option".to_string();
+        emit_error(&app, &op_id, &msg);
+        return Err(AppError::Validation(msg));
+    };
 
     let out_dir = input_path
         .parent()
-        .unwrap_or_else(|| Path::new("."));
+        .ok_or_else(|| {
+            let msg = "Cannot determine output directory from input path".to_string();
+            emit_error(&app, &op_id, &msg);
+            AppError::Validation(msg)
+        })?
+        .to_path_buf();
 
     let chunk_count = chunks.len();
+    if chunk_count == 0 {
+        let msg = "No chunks were produced".to_string();
+        emit_error(&app, &op_id, &msg);
+        return Err(AppError::Validation(msg));
+    }
+
     let mut out_paths: Vec<PathBuf> = Vec::with_capacity(chunk_count);
 
     for (i, chunk) in chunks.into_iter().enumerate() {
@@ -168,23 +214,29 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
             &format!("Writing chunk {}/{}\u{2026}", i + 1, chunk_count),
         );
 
-        let mut new_doc = extract_pages(&doc, &chunk)?;
-        let stem = output_stem_for_chunk(input_path, i + 1);
+        let mut new_doc = extract_pages(&doc, &chunk).map_err(|err| emit_and_return(err))?;
+        let stem = if req.output_stem.trim().is_empty() {
+            output_stem_for_chunk(input_path, i + 1)
+        } else {
+            format!("{}_split_{}", normalize_output_stem(&req.output_stem), i + 1)
+        };
         let out_path = out_dir.join(format!("{stem}.pdf"));
 
         new_doc
             .save(&out_path)
-            .map_err(|e| AppError::Pdf(format!("Failed to save split PDF {:?}: {e}", out_path)))?;
+            .map_err(|e| AppError::Pdf(format!("Failed to save split PDF {:?}: {e}", out_path)))
+            .map_err(|err| emit_and_return(err))?;
 
         out_paths.push(out_path);
     }
 
     emit_complete(&app, &op_id);
 
-    out_paths
-        .into_iter()
-        .next()
-        .ok_or_else(|| AppError::Validation("No chunks were produced".into()))
+    if out_paths.len() == 1 {
+        Ok(out_paths.remove(0))
+    } else {
+        Ok(out_dir)
+    }
 }
 
 #[cfg(test)]
@@ -229,5 +281,13 @@ mod tests {
         let p = PathBuf::from("/tmp/report.pdf");
         assert_eq!(output_stem_for_chunk(&p, 1), "report_split_1");
         assert_eq!(output_stem_for_chunk(&p, 2), "report_split_2");
+    }
+
+    #[test]
+    fn normalize_output_stem_removes_pdf_extension() {
+        assert_eq!(normalize_output_stem("report.pdf"), "report");
+        assert_eq!(normalize_output_stem("report.PDF"), "report");
+        assert_eq!(normalize_output_stem("report"), "report");
+        assert_eq!(normalize_output_stem(" report.pdf "), "report");
     }
 }
