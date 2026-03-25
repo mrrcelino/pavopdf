@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use lopdf::{Document, Object};
 use tauri::AppHandle;
@@ -45,7 +45,7 @@ pub fn parse_page_selection(selection: &str, total: usize) -> Vec<usize> {
     pages
 }
 
-pub fn output_stem(input: &PathBuf) -> String {
+pub fn output_stem(input: &Path) -> String {
     let stem = input
         .file_stem()
         .and_then(|s| s.to_str())
@@ -99,6 +99,21 @@ fn validated_rotation(req: &ProcessRequest) -> Result<i32> {
     Ok(normalize_rotation(raw))
 }
 
+fn apply_rotations(doc: &mut Document, page_numbers: &[usize], degrees: i32) -> Result<()> {
+    let page_map = doc.get_pages();
+    for page_number in page_numbers {
+        if let Some(&page_id) = page_map.get(&(*page_number as u32)) {
+            rotate_page(doc, page_id, degrees)?;
+        } else {
+            return Err(AppError::Validation(format!(
+                "Page {} not found in document",
+                page_number
+            )));
+        }
+    }
+    Ok(())
+}
+
 fn rotate_page(doc: &mut Document, page_id: lopdf::ObjectId, additional: i32) -> Result<()> {
     let page = doc
         .get_dictionary_mut(page_id)
@@ -120,6 +135,18 @@ fn rotate_page(doc: &mut Document, page_id: lopdf::ObjectId, additional: i32) ->
 #[cfg(test)]
 pub fn rotate_page_direct(doc: &mut Document, page_id: lopdf::ObjectId, degrees: i32) -> Result<()> {
     rotate_page(doc, page_id, degrees)
+}
+
+fn build_output_path(input_path: &Path, stem_override: &str) -> Result<PathBuf> {
+    let out_dir = input_path
+        .parent()
+        .ok_or_else(|| AppError::Validation("Cannot determine output directory from input path".into()))?;
+    let stem = if stem_override.trim().is_empty() {
+        output_stem(input_path)
+    } else {
+        stem_override.trim().to_string()
+    };
+    Ok(out_dir.join(format!("{stem}.pdf")))
 }
 
 pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
@@ -153,34 +180,11 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         return Err(AppError::Validation(msg));
     }
 
-    let page_map = doc.get_pages();
-
     emit_progress(&app, &op_id, 20, "Rotating pages...");
-    for (index, page_number) in pages.iter().enumerate() {
-        if let Some(&page_id) = page_map.get(&(*page_number as u32)) {
-            rotate_page(&mut doc, page_id, degrees).map_err(|err| emit_and_return(err))?;
-        }
+    apply_rotations(&mut doc, &pages, degrees).map_err(|err| emit_and_return(err))?;
+    emit_progress(&app, &op_id, 80, &format!("Rotated {} pages", pages.len()));
 
-        let percent = 20 + (((index + 1) * 60) / pages.len().max(1)) as u8;
-        emit_progress(
-            &app,
-            &op_id,
-            percent,
-            &format!("Rotating page {}/{}", index + 1, pages.len()),
-        );
-    }
-
-    let out_dir = input_path.parent().ok_or_else(|| {
-        let msg = "Cannot determine output directory from input path".to_string();
-        emit_error(&app, &op_id, &msg);
-        AppError::Validation(msg)
-    })?;
-    let stem = if req.output_stem.trim().is_empty() {
-        output_stem(input_path)
-    } else {
-        req.output_stem.trim().to_string()
-    };
-    let out_path = out_dir.join(format!("{stem}.pdf"));
+    let out_path = build_output_path(input_path, &req.output_stem)?;
 
     emit_progress(&app, &op_id, 85, "Writing output...");
     doc.save(&out_path)
