@@ -127,7 +127,6 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         emit_and_return(AppError::Io(format!("Failed to write .docx: {e}")))
     })?;
 
-    emit_progress(&app, &op_id, 100, "Complete");
     emit_complete(&app, &op_id);
 
     Ok(out_path)

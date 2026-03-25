@@ -522,7 +522,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         sheets.push((sheet_name, rows));
 
         // Progress: 20% -> 80% spread across pages
-        let percent = 20 + ((page_idx + 1) as u8 * 60 / total_pages as u8).min(60);
+        let percent = 20 + (((page_idx + 1) * 60 / total_pages.max(1)) as u8).min(60);
         emit_progress(
             &app,
             &op_id,

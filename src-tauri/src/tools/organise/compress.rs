@@ -139,7 +139,7 @@ fn compress_images(doc: &mut Document, preset: &CompressPreset) -> Result<()> {
                 .get(b"BitsPerComponent")
                 .ok()
                 .and_then(|o| o.as_i64().ok())
-                .unwrap_or(8) as u8;
+                .unwrap_or(8);
 
             if !matches!(cs.as_str(), "DeviceGray" | "DeviceRGB") || bpc != 8 {
                 continue;

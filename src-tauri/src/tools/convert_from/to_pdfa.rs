@@ -26,7 +26,9 @@ pub fn parse_conformance(opts: &Value) -> &str {
 }
 
 /// Build XMP metadata XML with PDF/A identification.
-pub fn build_xmp_metadata(title: &str, creator: &str) -> String {
+pub fn build_xmp_metadata(title: &str, creator: &str, conformance: &str) -> String {
+    let part = conformance.chars().next().unwrap_or('1');
+    let level = conformance.chars().nth(1).unwrap_or('b').to_ascii_uppercase();
     format!(
         r#"<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
@@ -36,8 +38,8 @@ pub fn build_xmp_metadata(title: &str, creator: &str) -> String {
       xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">
       <dc:title><rdf:Alt><rdf:li xml:lang="x-default">{title}</rdf:li></rdf:Alt></dc:title>
       <dc:creator><rdf:Seq><rdf:li>{creator}</rdf:li></rdf:Seq></dc:creator>
-      <pdfaid:part>1</pdfaid:part>
-      <pdfaid:conformance>B</pdfaid:conformance>
+      <pdfaid:part>{part}</pdfaid:part>
+      <pdfaid:conformance>{level}</pdfaid:conformance>
     </rdf:Description>
   </rdf:RDF>
 </x:xmpmeta>
@@ -179,7 +181,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         .map_err(|e| AppError::Pdf(format!("Failed to load {:?}: {e}", input_path)))
         .map_err(|err| emit_and_return(err))?;
 
-    let _conformance = parse_conformance(&req.options);
+    let conformance = parse_conformance(&req.options);
 
     // Step 1: Set PDF version to 1.4 (PDF/A-1 requirement)
     emit_progress(&app, &op_id, 20, "Setting PDF version to 1.4\u{2026}");
@@ -191,7 +193,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("Untitled");
-    let xmp = build_xmp_metadata(title, "PavoPDF");
+    let xmp = build_xmp_metadata(title, "PavoPDF", conformance);
     add_xmp_metadata(&mut doc, &xmp).map_err(|err| emit_and_return(err))?;
 
     // Step 3: Add sRGB OutputIntent
@@ -247,7 +249,7 @@ mod tests {
 
     #[test]
     fn xmp_metadata_contains_pdfa_identification() {
-        let xmp = build_xmp_metadata("Test Doc", "PavoPDF");
+        let xmp = build_xmp_metadata("Test Doc", "PavoPDF", "1b");
         assert!(xmp.contains("pdfaid:part"));
         assert!(xmp.contains("pdfaid:conformance"));
     }

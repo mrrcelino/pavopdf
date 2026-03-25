@@ -200,7 +200,7 @@ pub async fn run(app: AppHandle, req: ProcessRequest) -> Result<PathBuf> {
         }
 
         // Progress: 20% → 95% spread across pages
-        let percent = 20 + ((i + 1) as u8 * 75 / num_output as u8).min(75);
+        let percent = 20 + (((i + 1) * 75 / num_output.max(1)) as u8).min(75);
         emit_progress(
             &app,
             &op_id,
