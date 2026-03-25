@@ -19,7 +19,12 @@
 
   function stemFromPath(path: string): string {
     const fileName = fileNameFromPath(path);
-    return fileName.replace(/\.pdf$/i, '') || 'output';
+    return fileName.replace(/\.(pdf|docx)$/i, '') || 'output';
+  }
+
+  function dirFromPath(path: string): string {
+    const index = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+    return index >= 0 ? path.slice(0, index) : '';
   }
 
   async function pickFile() {
@@ -36,10 +41,16 @@
     error = null;
     outputPath = null;
 
-    const stem = stemFromPath(filePath);
-    const outFile = await api.saveFileDialog(`${stem}.docx`);
+    const defaultStem = stemFromPath(filePath);
+    const outFile = await api.saveFileDialog(`${defaultStem}.docx`);
     if (!outFile) return;
 
+    if (dirFromPath(outFile) !== dirFromPath(filePath)) {
+      error = 'Please choose a location in the same folder as the source PDF.';
+      return;
+    }
+
+    const stem = stemFromPath(outFile);
     const opId = crypto.randomUUID();
     running = true;
     progress = 0;
