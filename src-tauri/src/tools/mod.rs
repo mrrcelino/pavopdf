@@ -4,7 +4,6 @@ pub mod convert_from;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use crate::error::Result;
-use crate::pipeline::{temp::TempStage, progress};
 use tauri::AppHandle;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -31,22 +30,6 @@ pub async fn run(
     app: AppHandle,
     req: ProcessRequest,
 ) -> Result<PathBuf> {
-    let stage = TempStage::new()?;
-    progress::emit_progress(&app, &req.operation_id, 10, "Staging files...");
-
-    // Stage all input files
-    let _staged_inputs: Vec<PathBuf> = req.input_paths
-        .iter()
-        .map(|p| stage.stage_file(p))
-        .collect::<Result<_>>()?;
-
-    progress::emit_progress(&app, &req.operation_id, 20, "Processing...");
-
-    // Capture values needed after the match before ownership is transferred.
-    let op_id = req.operation_id.clone();
-    let app2 = app.clone();
-
-    // Tool dispatch — organise tools are wired in Plan 2; remaining tools arrive in Plans 3-6.
     #[allow(unreachable_patterns)]
     let output_path = match req.tool {
         Tool::Merge    => organise::merge::run(app, req).await,
@@ -55,7 +38,7 @@ pub async fn run(
         Tool::Rotate   => organise::rotate::run(app, req).await,
         Tool::Reorder  => organise::reorder::run(app, req).await,
         Tool::Remove   => organise::remove::run(app, req).await,
-        // --- Plan 3: PDF → Other ---
+        // Plan 3
         Tool::PdfToWord  => convert_from::to_word::run(app, req).await,
         Tool::PdfToExcel => convert_from::to_excel::run(app, req).await,
         Tool::PdfToPpt   => convert_from::to_ppt::run(app, req).await,
@@ -66,6 +49,5 @@ pub async fn run(
         )),
     }?;
 
-    progress::emit_progress(&app2, &op_id, 100, "Done");
     Ok(output_path)
 }
