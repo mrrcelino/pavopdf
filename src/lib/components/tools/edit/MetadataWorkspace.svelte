@@ -17,12 +17,25 @@
   let keywords = $state('');
   let creator = $state('');
 
+  let clearFields = $state<Set<string>>(new Set());
+
+  function markClear(field: string) {
+    clearFields = new Set([...clearFields, field]);
+  }
+
+  function unmarkClear(field: string) {
+    const next = new Set(clearFields);
+    next.delete(field);
+    clearFields = next;
+  }
+
   const hasAnyField = $derived(
     title.trim() !== '' ||
     author.trim() !== '' ||
     subject.trim() !== '' ||
     keywords.trim() !== '' ||
-    creator.trim() !== ''
+    creator.trim() !== '' ||
+    clearFields.size > 0
   );
 
   const canRun = $derived(filePath !== null && !running && hasAnyField);
@@ -46,11 +59,17 @@
     outputPath = null;
 
     const options: Record<string, string> = {};
+    // Non-empty field = set value; clearFields entry = send "" to remove metadata
     if (title.trim() !== '') options.title = title.trim();
+    else if (clearFields.has('title')) options.title = '';
     if (author.trim() !== '') options.author = author.trim();
+    else if (clearFields.has('author')) options.author = '';
     if (subject.trim() !== '') options.subject = subject.trim();
+    else if (clearFields.has('subject')) options.subject = '';
     if (keywords.trim() !== '') options.keywords = keywords.trim();
+    else if (clearFields.has('keywords')) options.keywords = '';
     if (creator.trim() !== '') options.creator = creator.trim();
+    else if (clearFields.has('creator')) options.creator = '';
 
     const opId = crypto.randomUUID();
     running = true;
@@ -108,51 +127,45 @@
     </div>
 
     <div class="flex flex-col gap-3 overflow-y-auto">
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium text-stone-600">Title</span>
-        <input
-          type="text"
-          bind:value={title}
-          placeholder="Document title"
-          class="px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 focus:outline-none focus:border-teal-400"
-        />
-      </label>
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium text-stone-600">Author</span>
-        <input
-          type="text"
-          bind:value={author}
-          placeholder="Author name"
-          class="px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 focus:outline-none focus:border-teal-400"
-        />
-      </label>
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium text-stone-600">Subject</span>
-        <input
-          type="text"
-          bind:value={subject}
-          placeholder="Document subject"
-          class="px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 focus:outline-none focus:border-teal-400"
-        />
-      </label>
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium text-stone-600">Keywords</span>
-        <input
-          type="text"
-          bind:value={keywords}
-          placeholder="Comma-separated keywords"
-          class="px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 focus:outline-none focus:border-teal-400"
-        />
-      </label>
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium text-stone-600">Creator</span>
-        <input
-          type="text"
-          bind:value={creator}
-          placeholder="Creator application"
-          class="px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 focus:outline-none focus:border-teal-400"
-        />
-      </label>
+      {#snippet metaField(label: string, field: string, value: string, setValue: (v: string) => void, placeholder: string)}
+        <div class="flex flex-col gap-1">
+          <span class="text-sm font-medium text-stone-600">{label}</span>
+          <div class="flex gap-1.5">
+            <input
+              type="text"
+              {value}
+              oninput={(e: Event) => { setValue((e.target as HTMLInputElement).value); unmarkClear(field); }}
+              {placeholder}
+              disabled={clearFields.has(field)}
+              class="flex-1 px-3 py-2 rounded-lg border text-sm text-stone-700 focus:outline-none focus:border-teal-400 {clearFields.has(field) ? 'border-red-300 bg-red-50 line-through' : 'border-stone-200'}"
+            />
+            {#if clearFields.has(field)}
+              <button
+                type="button"
+                onclick={() => unmarkClear(field)}
+                class="px-2 py-1 rounded border border-stone-300 text-xs text-stone-600 hover:bg-stone-50 transition-colors"
+                title="Undo clear"
+              >Undo</button>
+            {:else}
+              <button
+                type="button"
+                onclick={() => { setValue(''); markClear(field); }}
+                class="px-2 py-1 rounded border border-red-200 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                title="Clear existing metadata for {label}"
+              >Clear</button>
+            {/if}
+          </div>
+          {#if clearFields.has(field)}
+            <span class="text-xs text-red-500">Will be removed from PDF</span>
+          {/if}
+        </div>
+      {/snippet}
+
+      {@render metaField('Title', 'title', title, (v) => title = v, 'Document title')}
+      {@render metaField('Author', 'author', author, (v) => author = v, 'Author name')}
+      {@render metaField('Subject', 'subject', subject, (v) => subject = v, 'Document subject')}
+      {@render metaField('Keywords', 'keywords', keywords, (v) => keywords = v, 'Comma-separated keywords')}
+      {@render metaField('Creator', 'creator', creator, (v) => creator = v, 'Creator application')}
     </div>
   {/if}
 

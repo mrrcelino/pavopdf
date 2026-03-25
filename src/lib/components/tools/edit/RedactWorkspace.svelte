@@ -21,7 +21,12 @@
 
   let regions = $state<Region[]>([{ page: 1, x: 0, y: 0, width: 100, height: 20 }]);
 
-  const canRun = $derived(filePath !== null && regions.length > 0 && !running);
+  const canRun = $derived(
+    filePath !== null &&
+    !running &&
+    regions.length > 0 &&
+    regions.every(r => r.width > 0 && r.height > 0 && r.page > 0)
+  );
 
   function fileNameFromPath(path: string): string {
     return path.split(/[\\/]/).pop() ?? path;

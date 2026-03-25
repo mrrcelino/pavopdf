@@ -77,41 +77,58 @@ fn get_page_width(doc: &Document, page_id: lopdf::ObjectId) -> f32 {
 
 /// Ensure the page's Resources dictionary has /F1 as Helvetica.
 fn ensure_font_f1(doc: &mut Document, page_id: lopdf::ObjectId) -> Result<()> {
-    let page_dict = doc
-        .get_dictionary_mut(page_id)
-        .map_err(|e| AppError::Pdf(format!("Failed to get page dictionary: {e}")))?;
-
-    let has_resources = page_dict.get(b"Resources").is_ok();
-    if !has_resources {
-        page_dict.set("Resources", Object::Dictionary(Dictionary::new()));
-    }
-
-    let page_dict = doc
-        .get_dictionary_mut(page_id)
-        .map_err(|e| AppError::Pdf(format!("Failed to get page dictionary: {e}")))?;
-
-    let resources = page_dict
-        .get_mut(b"Resources")
-        .map_err(|e| AppError::Pdf(format!("Failed to get Resources: {e}")))?;
-
-    if let Object::Dictionary(ref mut res_dict) = resources {
-        let has_font = res_dict.get(b"Font").is_ok();
-        if !has_font {
-            res_dict.set("Font", Object::Dictionary(Dictionary::new()));
-        }
-        if let Ok(Object::Dictionary(ref mut font_dict)) = res_dict.get_mut(b"Font") {
-            if font_dict.get(b"F1").is_err() {
-                let helvetica = dictionary! {
-                    "Type" => Object::Name(b"Font".to_vec()),
-                    "Subtype" => Object::Name(b"Type1".to_vec()),
-                    "BaseFont" => Object::Name(b"Helvetica".to_vec()),
-                };
-                font_dict.set("F1", Object::Dictionary(helvetica));
+    // First, check if Resources exists and whether it's a reference
+    let resources_ref = {
+        let page_dict = doc.get_dictionary(page_id)
+            .map_err(|e| AppError::Pdf(format!("Failed to get page dictionary: {e}")))?;
+        match page_dict.get(b"Resources") {
+            Ok(Object::Reference(id)) => Some(*id),
+            Ok(Object::Dictionary(_)) => None, // inline, will handle below
+            _ => {
+                // No Resources at all — add inline empty dict
+                let page_dict_mut = doc.get_dictionary_mut(page_id)
+                    .map_err(|e| AppError::Pdf(format!("Failed to get page dict: {e}")))?;
+                page_dict_mut.set("Resources", Object::Dictionary(Dictionary::new()));
+                None
             }
         }
+    };
+
+    // If Resources is an indirect reference, inject font into the referenced dict
+    if let Some(res_id) = resources_ref {
+        let res_dict = doc.get_dictionary_mut(res_id)
+            .map_err(|e| AppError::Pdf(format!("Failed to resolve Resources: {e}")))?;
+        inject_font_f1(res_dict);
+        return Ok(());
+    }
+
+    // Otherwise Resources is an inline Dictionary on the page
+    let page_dict = doc.get_dictionary_mut(page_id)
+        .map_err(|e| AppError::Pdf(format!("Failed to get page dictionary: {e}")))?;
+
+    if let Ok(Object::Dictionary(ref mut res_dict)) = page_dict.get_mut(b"Resources") {
+        inject_font_f1(res_dict);
     }
 
     Ok(())
+}
+
+/// Inject /F1 Helvetica font into a Resources dictionary.
+fn inject_font_f1(res_dict: &mut Dictionary) {
+    let has_font = res_dict.get(b"Font").is_ok();
+    if !has_font {
+        res_dict.set("Font", Object::Dictionary(Dictionary::new()));
+    }
+    if let Ok(Object::Dictionary(ref mut font_dict)) = res_dict.get_mut(b"Font") {
+        if font_dict.get(b"F1").is_err() {
+            let helvetica = dictionary! {
+                "Type" => Object::Name(b"Font".to_vec()),
+                "Subtype" => Object::Name(b"Type1".to_vec()),
+                "BaseFont" => Object::Name(b"Helvetica".to_vec()),
+            };
+            font_dict.set("F1", Object::Dictionary(helvetica));
+        }
+    }
 }
 
 /// Append a content stream to a page's Contents entry.
