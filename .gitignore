@@ -2,3 +2,5 @@ node_modules/
 dist/
 target/
 .superpowers/
+.claude/
+src-tauri/gen/
