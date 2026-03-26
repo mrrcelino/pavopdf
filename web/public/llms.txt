@@ -1,0 +1,26 @@
+# PavoPDF
+
+> Free, open-source, offline PDF toolkit for Windows, macOS, and Linux.
+
+PavoPDF is a desktop application that processes PDFs entirely on your computer. No cloud uploads, no accounts, no subscriptions. MIT licensed.
+
+## Key Facts
+- Price: Free (forever)
+- License: MIT (fully open source)
+- Platforms: Windows (.msi/.exe), macOS (.dmg), Linux (.AppImage/.deb)
+- Technology: Tauri 2 (Rust backend) + Svelte 5 (frontend)
+- Tools: 25 PDF tools across 5 categories
+- Privacy: All processing is local. Files never leave your computer.
+- GitHub: https://github.com/mrrcelino/pavopdf
+- Website: https://pavopdf.com
+- Download: https://pavopdf.com/download
+
+## Tool Categories
+- Organise: Merge, Split, Compress, Rotate Pages, Reorder Pages, Remove Pages
+- Convert from PDF: PDF to Word, PDF to Excel, PDF to PowerPoint, PDF to Image, PDF to PDF/A
+- Convert to PDF: Word to PDF, Excel to PDF, PowerPoint to PDF, Image to PDF, HTML to PDF
+- Edit: Edit Metadata, Add Watermark, Add Page Numbers, Redact
+- Security & Repair: Password Protect, Unlock, Sign, OCR, Repair
+
+## Detailed Tool Documentation
+See: https://pavopdf.com/llms-full.txt

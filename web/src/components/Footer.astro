@@ -1,0 +1,61 @@
+---
+import { categories, getToolsByCategory } from '../data/tools';
+---
+
+<footer class="bg-stone-900 text-stone-400 border-t border-stone-800">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+      <!-- Tools -->
+      <div>
+        <h3 class="text-sm font-semibold text-cream uppercase tracking-wider mb-4">Tools</h3>
+        <ul class="space-y-2">
+          {categories.map((cat) => (
+            <li>
+              <a href={`/#${cat.slug}`} class="text-sm hover:text-cream transition-colors">
+                {cat.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Resources -->
+      <div>
+        <h3 class="text-sm font-semibold text-cream uppercase tracking-wider mb-4">Resources</h3>
+        <ul class="space-y-2">
+          <li><a href="/download" class="text-sm hover:text-cream transition-colors">Download</a></li>
+          <li><a href="/about" class="text-sm hover:text-cream transition-colors">About</a></li>
+          <li><a href="/privacy" class="text-sm hover:text-cream transition-colors">Privacy Policy</a></li>
+          <li>
+            <a
+              href="https://github.com/mrrcelino/pavopdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm hover:text-cream transition-colors"
+            >
+              GitHub
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h3 class="text-sm font-semibold text-cream uppercase tracking-wider mb-4">Legal</h3>
+        <ul class="space-y-2">
+          <li><a href="/privacy" class="text-sm hover:text-cream transition-colors">Privacy Policy</a></li>
+          <li class="text-sm">MIT License</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-8 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-sm text-stone-500">
+        Crafted with Claude by Anthropic
+      </p>
+      <p class="text-sm text-stone-500">
+        &copy; {new Date().getFullYear()} PavoPDF. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>

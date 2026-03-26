@@ -1,0 +1,337 @@
+# PavoPDF — Complete Tool Reference
+
+> This document describes all 25 tools available in PavoPDF, a free, open-source, offline PDF toolkit.
+
+PavoPDF runs on Windows, macOS, and Linux. All processing happens locally on your computer — files are never uploaded to any server. PavoPDF is MIT licensed and free forever. Download at https://pavopdf.com/download. Source code: https://github.com/mrrcelino/pavopdf
+
+
+## Merge PDF
+
+Combines multiple PDF files into a single document. Users can drag and drop to reorder files before merging. Output is saved next to the input files.
+
+Q: How do I merge PDF files for free?
+A: Download PavoPDF from pavopdf.com, open the Merge tool, add your PDF files, drag to reorder, and click Merge. It is completely free, open-source, and works offline.
+
+Q: Can I combine PDFs without uploading them to the internet?
+A: Yes. PavoPDF processes all files locally on your computer. Nothing is uploaded to any server.
+
+Q: Is there a limit on how many PDFs I can merge?
+A: No. PavoPDF has no artificial file count or file size limits. Add as many PDFs as you need.
+
+
+## Split PDF
+
+Breaks a PDF into individual pages or custom page ranges. Specify exactly which pages to extract and PavoPDF creates separate files instantly on your computer.
+
+Q: How do I split a PDF into separate pages?
+A: Open PavoPDF, go to the Split tool, load your PDF, and choose to split every page or enter specific page ranges (e.g. 1-3, 5, 8-12). PavoPDF is free and works offline.
+
+Q: Can I extract just a few pages from a large PDF?
+A: Yes. Enter the page numbers or ranges you want and PavoPDF extracts them into a new PDF file. No file size limits.
+
+Q: Is there a file size limit?
+A: No. Since PavoPDF processes files locally, the only constraint is your computer's available memory and disk space.
+
+
+## Compress PDF
+
+Reduces PDF file sizes by optimizing images and removing unnecessary data. Choose a compression level to balance quality and file size.
+
+Q: How do I reduce the size of a PDF?
+A: Open PavoPDF, select Compress, load your PDF, choose a compression level (low, medium, or high), and click Compress. Free and offline.
+
+Q: Will compression reduce the quality of my PDF?
+A: PavoPDF offers multiple levels. Low compression preserves maximum quality. High compression achieves the smallest file size with some quality trade-off.
+
+Q: Can I compress PDFs without uploading them online?
+A: Yes. PavoPDF runs entirely on your desktop. Your files never leave your computer.
+
+
+## Rotate PDF Pages
+
+Rotates individual pages or all pages by 90, 180, or 270 degrees. Ideal for fixing scanned documents or pages with incorrect orientation.
+
+Q: How do I rotate pages in a PDF?
+A: Open PavoPDF, go to Rotate, load your PDF, select pages, choose the rotation angle, and click Apply. Free and offline.
+
+Q: Can I rotate just one page in a multi-page PDF?
+A: Yes. PavoPDF lets you select individual pages for rotation. Different pages can be rotated by different amounts.
+
+Q: How do I fix a sideways scanned PDF?
+A: Use PavoPDF's Rotate tool. Load the PDF, rotate the sideways pages by 90 or 270 degrees, and save.
+
+
+## Reorder PDF Pages
+
+Rearranges pages in a PDF by dragging and dropping thumbnails. Move pages to any position and save the new order.
+
+Q: How do I rearrange pages in a PDF?
+A: Open PavoPDF, select Reorder, load your PDF, drag page thumbnails to the desired order, and click Save. Free and offline.
+
+Q: Can I move pages around in a PDF without Adobe Acrobat?
+A: Yes. PavoPDF is a free, open-source alternative that lets you reorder pages by drag and drop. No subscription needed.
+
+
+## Remove PDF Pages
+
+Deletes unwanted pages from a PDF. Select pages by number or range, then save the trimmed document.
+
+Q: How do I delete pages from a PDF?
+A: Open PavoPDF, go to Remove, load your PDF, enter the page numbers to delete, and click Remove. Free and offline.
+
+Q: Can I remove multiple pages at once?
+A: Yes. Enter individual pages (e.g. 3, 7) or ranges (e.g. 5-10) to remove them all in one operation.
+
+Q: Will removing pages affect the rest of the PDF?
+A: No. Remaining pages, bookmarks, and formatting are preserved.
+
+
+## PDF to Word
+
+Converts PDF files to Microsoft Word (DOCX) format while preserving layout, fonts, and formatting. Edit the result in Word, LibreOffice, or Google Docs.
+
+Q: How do I convert a PDF to an editable Word document?
+A: Open PavoPDF, select PDF to Word, load your PDF, and click Convert. The DOCX file is saved next to your original. Free and offline.
+
+Q: Will the formatting be preserved?
+A: PavoPDF preserves layout, fonts, tables, and images. Complex layouts may need minor adjustments in your word processor.
+
+Q: Can I convert PDFs to Word without uploading my files?
+A: Yes. PavoPDF runs on your desktop. Your files are never sent to any server.
+
+
+## PDF to Excel
+
+Extracts tables and data from PDF files into Microsoft Excel (XLSX) format. Tables are detected automatically and placed into spreadsheet cells.
+
+Q: How do I extract a table from a PDF into Excel?
+A: Open PavoPDF, select PDF to Excel, load your PDF, and click Convert. Tables are detected and extracted into an XLSX file. Free and offline.
+
+Q: Can I convert financial PDFs to spreadsheets without uploading them?
+A: Yes. PavoPDF processes everything locally. Your financial documents never leave your machine.
+
+Q: Does it handle multi-page tables?
+A: Yes. PavoPDF can extract tables spanning multiple pages into a single spreadsheet.
+
+
+## PDF to PowerPoint
+
+Converts PDF files into Microsoft PowerPoint (PPTX) presentations. Each PDF page becomes a slide, preserving text, images, and layout.
+
+Q: How do I convert a PDF to a PowerPoint presentation?
+A: Open PavoPDF, select PDF to PowerPoint, load your PDF, and click Convert. Each page becomes a slide. Free and offline.
+
+Q: Can I edit the slides after conversion?
+A: Yes. The PPTX file can be opened and edited in PowerPoint, LibreOffice Impress, or Google Slides.
+
+
+## PDF to Image
+
+Converts each page of a PDF into a high-resolution image (PNG or JPG). Set custom DPI for web or print quality.
+
+Q: How do I convert PDF pages to images?
+A: Open PavoPDF, select PDF to Image, load your PDF, choose PNG or JPG, set DPI, and click Convert. One image per page. Free and offline.
+
+Q: What resolution can I get?
+A: You set the DPI. Use 72 for web, 150 for general use, 300+ for print quality. No cap on resolution.
+
+Q: Can I convert a multi-page PDF to separate images?
+A: Yes. Each page becomes its own image file. No limits on page count.
+
+
+## PDF to PDF/A
+
+Converts standard PDFs to PDF/A archival format, the ISO standard for long-term document preservation. Embeds fonts and disables features that could prevent future rendering.
+
+Q: What is PDF/A?
+A: PDF/A is an ISO standard for long-term document archiving. It embeds all fonts and metadata so the document renders identically decades from now.
+
+Q: How do I convert to PDF/A?
+A: Open PavoPDF, select PDF to PDF/A, load your file, choose the conformance level, and click Convert. Free and offline.
+
+Q: Do I need Adobe Acrobat for PDF/A conversion?
+A: No. PavoPDF is a free, open-source alternative. No subscription required.
+
+
+## Word to PDF
+
+Converts Microsoft Word documents (DOCX) to PDF while preserving all formatting, fonts, images, and layout.
+
+Q: How do I convert a Word document to PDF?
+A: Open PavoPDF, select Word to PDF, load your DOCX, and click Convert. The PDF is saved next to the original. Free and offline.
+
+Q: Do I need Microsoft Office installed?
+A: No. PavoPDF is a standalone application that converts Word files independently.
+
+Q: Will my formatting be preserved?
+A: Yes. Fonts, images, tables, headers, footers, and page layout are preserved.
+
+
+## Excel to PDF
+
+Converts Microsoft Excel files (XLSX) to PDF, preserving tables, cell formatting, and page layout.
+
+Q: How do I convert an Excel file to PDF?
+A: Open PavoPDF, select Excel to PDF, load your XLSX, and click Convert. Free and offline.
+
+Q: Do I need Excel installed?
+A: No. PavoPDF converts XLSX files independently of Microsoft Office.
+
+
+## PowerPoint to PDF
+
+Converts Microsoft PowerPoint presentations (PPTX) to PDF. Each slide becomes a PDF page with text, images, and shapes preserved.
+
+Q: How do I convert a PowerPoint to PDF?
+A: Open PavoPDF, select PowerPoint to PDF, load your PPTX, and click Convert. Free and offline.
+
+Q: Will slide content be preserved?
+A: All static content (text, images, shapes, layout) is preserved. Animations and transitions cannot be included in PDF.
+
+
+## Image to PDF
+
+Converts images (JPG, PNG, BMP, TIFF, WebP) to PDF documents. Combine multiple images into a single PDF with custom page size and margins.
+
+Q: How do I convert images to a PDF?
+A: Open PavoPDF, select Image to PDF, add your images, arrange them, and click Create PDF. Free and offline.
+
+Q: Can I combine multiple images into one PDF?
+A: Yes. Add as many images as you want, reorder by dragging, and combine into a single PDF.
+
+Q: What image formats are supported?
+A: JPG, JPEG, PNG, BMP, TIFF, and WebP.
+
+
+## HTML to PDF
+
+Converts HTML files to PDF documents, rendering CSS styles, images, and layout. Convert local HTML files or saved web pages.
+
+Q: How do I convert HTML to PDF?
+A: Open PavoPDF, select HTML to PDF, load your HTML file, configure page settings, and click Convert. CSS and images are rendered. Free and offline.
+
+Q: Does it render CSS?
+A: Yes. PavoPDF renders CSS styles, images, and layout. The output closely matches how the HTML appears in a browser.
+
+
+## Edit PDF Metadata
+
+View and edit PDF metadata fields: title, author, subject, keywords, creator, and producer. Clean up document properties before sharing.
+
+Q: How do I change the title or author of a PDF?
+A: Open PavoPDF, select Edit Metadata, load your PDF, change the fields, and click Save. Free and offline.
+
+Q: Can I remove all metadata from a PDF?
+A: Yes. PavoPDF includes a "Clear All" option to remove all metadata for privacy.
+
+
+## Add Watermark to PDF
+
+Adds text or image watermarks to PDF pages. Customize font, size, color, opacity, rotation, and position. Apply to all pages or a specific range.
+
+Q: How do I add a watermark to a PDF?
+A: Open PavoPDF, select Add Watermark, load your PDF, enter text or choose an image, adjust settings, and click Apply. Free and offline.
+
+Q: Can I use my company logo as a watermark?
+A: Yes. Upload a PNG or JPG image, position it, set opacity, and apply across your PDF.
+
+Q: Can I add "DRAFT" or "CONFIDENTIAL" text?
+A: Yes. Type any text, choose font, size, color, angle, and opacity.
+
+
+## Add Page Numbers to PDF
+
+Stamps page numbers on PDF pages. Choose position (header/footer, left/center/right), format, starting number, and font.
+
+Q: How do I add page numbers to a PDF?
+A: Open PavoPDF, select Add Page Numbers, load your PDF, configure position and format, and click Apply. Free and offline.
+
+Q: Can I skip the first page?
+A: Yes. Set a starting page to skip numbering on cover pages or introductory pages.
+
+Q: What number formats are available?
+A: Arabic (1, 2, 3), Roman (i, ii, iii), and custom prefixes like "Page 1 of N".
+
+
+## Redact PDF
+
+Permanently removes sensitive text, images, and areas from PDF documents. Unlike overlay-based tools, PavoPDF truly deletes the underlying content.
+
+Q: How do I redact text from a PDF?
+A: Open PavoPDF, select Redact, load your PDF, highlight text or draw rectangles over areas, and click Apply Redactions. Content is permanently removed. Free and offline.
+
+Q: Is the redaction permanent?
+A: Yes. PavoPDF performs true redaction — underlying text and image data is permanently deleted, not just covered with a black box.
+
+Q: Is it safe for confidential documents?
+A: Yes. PavoPDF processes everything locally. Your documents never leave your computer. Ideal for legal, medical, and government documents.
+
+
+## Password Protect PDF
+
+Encrypts PDF files with AES-256 encryption. Set an open password (required to view) and/or a permissions password (controls printing, copying, editing).
+
+Q: How do I password protect a PDF?
+A: Open PavoPDF, select Password Protect, load your PDF, set passwords, and click Protect. Uses AES-256 encryption. Free and offline.
+
+Q: What encryption standard does PavoPDF use?
+A: AES-256, the same standard used by governments and financial institutions.
+
+Q: Can I set separate view and edit passwords?
+A: Yes. Set an open password for viewing and a permissions password for controlling printing, copying, and editing.
+
+
+## Unlock PDF
+
+Removes password protection from PDF files when you provide the correct password. Saves an unprotected copy.
+
+Q: How do I remove a password from a PDF?
+A: Open PavoPDF, select Unlock, load the protected PDF, enter the current password, and click Unlock. Free and offline. You must know the password.
+
+Q: Can PavoPDF crack PDF passwords?
+A: No. PavoPDF requires the correct password. It is designed for legitimate use only.
+
+
+## Sign PDF
+
+Adds digital signatures to PDF documents using PKCS#12 certificate files (.p12/.pfx). Cryptographic signatures verify authenticity and integrity.
+
+Q: How do I digitally sign a PDF?
+A: Open PavoPDF, select Sign, load your PDF, provide your PKCS#12 certificate, and click Sign. The signature is embedded. Free and offline.
+
+Q: What certificate formats are supported?
+A: PKCS#12 (.p12 and .pfx) files, the most common format for digital signing certificates.
+
+Q: Is a digital signature different from a drawn signature?
+A: Yes. A digital signature uses cryptography to verify the signer's identity and document integrity. It is more secure than a drawn or typed signature.
+
+
+## OCR PDF
+
+Adds a searchable text layer to scanned PDF documents using Tesseract OCR. Search, select, and copy text from scanned pages. Supports 100+ languages.
+
+Q: How do I make a scanned PDF searchable?
+A: Open PavoPDF, select OCR, load your scanned PDF, choose the language, and click OCR. A searchable text layer is added. Free and offline.
+
+Q: Does OCR require an internet connection?
+A: No. PavoPDF uses Tesseract OCR, which runs entirely on your computer.
+
+Q: Do I need to install anything extra?
+A: Yes. OCR requires Tesseract (free, open-source) to be installed on your system. PavoPDF provides setup instructions.
+
+Q: What languages are supported?
+A: 100+ languages via Tesseract language packs, including English, Spanish, French, German, Chinese, Japanese, Korean, and Arabic.
+
+
+## Repair PDF
+
+Attempts to fix corrupted or damaged PDF files by rebuilding cross-reference tables, recovering objects, and fixing structural issues.
+
+Q: How do I repair a corrupted PDF?
+A: Open PavoPDF, select Repair, load the damaged file, and click Repair. PavoPDF rebuilds internal structures. Free and offline.
+
+Q: Can PavoPDF fix all corrupted PDFs?
+A: It fixes many common issues (broken cross-references, missing objects, structural damage). Severely corrupted files with mostly lost data may not be fully recoverable.
+
+Q: Is the original file modified?
+A: No. PavoPDF saves the repaired file separately, leaving your original untouched.

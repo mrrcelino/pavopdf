@@ -1,0 +1,186 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { categories, getToolsByCategory } from '../data/tools';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'PavoPDF',
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Windows, macOS, Linux',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  description: 'Free, open-source, offline PDF toolkit with 25 tools. Merge, split, convert, edit, and secure PDFs — all on your desktop.',
+  url: 'https://pavopdf.com',
+  downloadUrl: 'https://github.com/mrrcelino/pavopdf/releases/latest',
+  license: 'https://opensource.org/licenses/MIT',
+};
+
+const categoryIcons: Record<string, string> = {
+  organise: 'M4 6h16M4 10h16M4 14h16M4 18h16',
+  'convert-from-pdf': 'M5 12h14m-4-4l4 4-4 4',
+  'convert-to-pdf': 'M19 12H5m4-4l-4 4 4 4',
+  edit: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',
+  'security-repair': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+};
+---
+
+<BaseLayout
+  title="PavoPDF — Free, Open-Source, Offline PDF Tools"
+  description="PavoPDF is a free, open-source desktop app with 25 PDF tools. Merge, split, convert, edit, and secure PDFs offline. Your files never leave your computer."
+  canonicalPath="/"
+  jsonLd={jsonLd}
+>
+  <!-- Hero -->
+  <section class="bg-stone-950 text-cream">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-20 sm:py-28 text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+        Your PDFs. Your computer.<br />No cloud required.
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-stone-400 max-w-2xl mx-auto leading-relaxed">
+        PavoPDF is a free, open-source desktop app with 25 PDF tools. Everything runs offline — your files never leave your machine.
+      </p>
+      <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/download"
+          class="inline-flex items-center justify-center px-8 py-3.5 bg-teal text-white font-semibold rounded-lg hover:bg-teal-dark transition-colors text-base"
+        >
+          Download for Free
+        </a>
+        <a
+          href="https://github.com/mrrcelino/pavopdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center px-8 py-3.5 border border-stone-600 text-stone-300 font-semibold rounded-lg hover:border-stone-400 hover:text-cream transition-colors text-base"
+        >
+          View on GitHub
+        </a>
+      </div>
+    </div>
+    <!-- Angled divider -->
+    <div class="relative h-16 bg-cream" style="clip-path: polygon(0 100%, 100% 0, 100% 100%);">
+    </div>
+  </section>
+
+  <!-- Feature Grid -->
+  <section class="bg-cream py-20 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl sm:text-4xl font-bold text-stone-900">25 tools. Zero uploads.</h2>
+        <p class="mt-4 text-lg text-stone-500 max-w-xl mx-auto">
+          Every tool runs on your desktop. No accounts, no file size limits, no internet required.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categories.map((cat) => {
+          const catTools = getToolsByCategory(cat.slug);
+          return (
+            <div
+              id={cat.slug}
+              class="bg-white border border-stone-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            >
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-9 h-9 rounded-md bg-teal/10 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d={categoryIcons[cat.slug]} />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-stone-900">{cat.name}</h3>
+                  <p class="text-xs text-stone-400">{cat.count} tools</p>
+                </div>
+              </div>
+              <ul class="space-y-1.5">
+                {catTools.map((tool) => (
+                  <li>
+                    <a
+                      href={`/tools/${tool.slug}`}
+                      class="text-sm text-stone-600 hover:text-teal transition-colors"
+                    >
+                      {tool.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="bg-white py-20 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <h2 class="text-3xl sm:text-4xl font-bold text-stone-900 text-center mb-12">Why PavoPDF?</h2>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b-2 border-stone-200">
+              <th class="py-3 px-4 text-sm font-semibold text-stone-500 uppercase tracking-wider"></th>
+              <th class="py-3 px-4 text-sm font-semibold text-teal uppercase tracking-wider">PavoPDF</th>
+              <th class="py-3 px-4 text-sm font-semibold text-stone-500 uppercase tracking-wider">Online Tools</th>
+              <th class="py-3 px-4 text-sm font-semibold text-stone-500 uppercase tracking-wider">Adobe Acrobat</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr class="border-b border-stone-100">
+              <td class="py-3 px-4 font-medium text-stone-700">Price</td>
+              <td class="py-3 px-4 text-stone-900 border-l-2 border-teal font-medium">Free forever</td>
+              <td class="py-3 px-4 text-stone-500">Free (limited) or paid</td>
+              <td class="py-3 px-4 text-stone-500">$19.99/mo</td>
+            </tr>
+            <tr class="border-b border-stone-100">
+              <td class="py-3 px-4 font-medium text-stone-700">Privacy</td>
+              <td class="py-3 px-4 text-stone-900 border-l-2 border-teal font-medium">Files stay on your computer</td>
+              <td class="py-3 px-4 text-stone-500">Files uploaded to servers</td>
+              <td class="py-3 px-4 text-stone-500">Cloud features available</td>
+            </tr>
+            <tr class="border-b border-stone-100">
+              <td class="py-3 px-4 font-medium text-stone-700">Open Source</td>
+              <td class="py-3 px-4 text-stone-900 border-l-2 border-teal font-medium">Yes (MIT license)</td>
+              <td class="py-3 px-4 text-stone-500">No</td>
+              <td class="py-3 px-4 text-stone-500">No</td>
+            </tr>
+            <tr class="border-b border-stone-100">
+              <td class="py-3 px-4 font-medium text-stone-700">Works Offline</td>
+              <td class="py-3 px-4 text-stone-900 border-l-2 border-teal font-medium">Yes</td>
+              <td class="py-3 px-4 text-stone-500">No</td>
+              <td class="py-3 px-4 text-stone-500">Partially</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 font-medium text-stone-700">Tools</td>
+              <td class="py-3 px-4 text-stone-900 border-l-2 border-teal font-medium">25</td>
+              <td class="py-3 px-4 text-stone-500">Varies</td>
+              <td class="py-3 px-4 text-stone-500">20+</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download CTA -->
+  <section class="bg-stone-950 text-cream py-20 sm:py-24">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold">Ready to take control of your PDFs?</h2>
+      <p class="mt-4 text-lg text-stone-400">
+        Download PavoPDF — free, forever, for everyone.
+      </p>
+      <a
+        href="/download"
+        class="inline-flex items-center justify-center mt-8 px-10 py-4 bg-teal text-white font-semibold rounded-lg hover:bg-teal-dark transition-colors text-lg"
+      >
+        Download PavoPDF
+      </a>
+      <p class="mt-4 text-sm text-stone-500">
+        Available for Windows, macOS, and Linux
+      </p>
+    </div>
+  </section>
+</BaseLayout>

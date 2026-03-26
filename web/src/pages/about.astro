@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="About PavoPDF — Free, Open-Source PDF Toolkit"
+  description="PavoPDF is a free, open-source desktop application for PDF processing. Built with Tauri 2 and Rust, it runs entirely offline. MIT licensed."
+  canonicalPath="/about"
+>
+  <section class="bg-stone-950 text-cream py-16 sm:py-20">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">About PavoPDF</h1>
+    </div>
+  </section>
+
+  <article class="max-w-3xl mx-auto px-4 sm:px-6 py-16 space-y-12">
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">What is PavoPDF?</h2>
+      <p class="text-stone-700 leading-relaxed">
+        PavoPDF is a free, open-source desktop application that gives you 25 PDF tools — all running offline on your computer. Merge, split, convert, compress, edit metadata, add watermarks, redact sensitive content, sign documents, run OCR, and more. No accounts, no subscriptions, no file uploads.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">Why offline?</h2>
+      <p class="text-stone-700 leading-relaxed">
+        Most PDF tools require you to upload your files to a server. That means your contracts, financial statements, medical records, and personal documents pass through someone else's infrastructure. PavoPDF takes a different approach: every operation runs locally on your machine. Your files never leave your computer, and no internet connection is needed.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">How it's built</h2>
+      <p class="text-stone-700 leading-relaxed mb-4">
+        PavoPDF is built with modern, reliable technology:
+      </p>
+      <ul class="space-y-2 text-stone-700">
+        <li class="flex items-start gap-2">
+          <span class="text-teal font-bold mt-0.5">&bull;</span>
+          <span><strong>Tauri 2</strong> — a lightweight framework for building desktop apps with web technologies and a Rust backend</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-teal font-bold mt-0.5">&bull;</span>
+          <span><strong>Rust</strong> — handles all PDF processing with memory safety and performance</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-teal font-bold mt-0.5">&bull;</span>
+          <span><strong>Svelte 5</strong> — powers the user interface with fast, reactive components</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-teal font-bold mt-0.5">&bull;</span>
+          <span><strong>MIT License</strong> — fully open-source, free to use, modify, and distribute</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">Crafted with Claude by Anthropic</h2>
+      <p class="text-stone-700 leading-relaxed">
+        PavoPDF was crafted with the assistance of Claude, Anthropic's AI assistant. The codebase, architecture, and this website were developed collaboratively between a human developer and Claude, demonstrating what's possible when AI tools are used thoughtfully in software development.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">Open source</h2>
+      <p class="text-stone-700 leading-relaxed">
+        PavoPDF is fully open-source under the MIT license. You can inspect every line of code, verify that no data is collected, and contribute improvements.
+      </p>
+      <a
+        href="https://github.com/mrrcelino/pavopdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 mt-4 text-teal hover:text-teal-dark font-medium transition-colors"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+        </svg>
+        View on GitHub
+      </a>
+    </section>
+  </article>
+</BaseLayout>

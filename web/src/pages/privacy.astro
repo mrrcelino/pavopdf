@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Privacy Policy — PavoPDF"
+  description="PavoPDF does not collect, transmit, or store any user data. All PDF processing happens locally on your computer. No analytics, no telemetry, no cloud."
+  canonicalPath="/privacy"
+>
+  <section class="bg-stone-950 text-cream py-16 sm:py-20">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Privacy Policy</h1>
+    </div>
+  </section>
+
+  <article class="max-w-3xl mx-auto px-4 sm:px-6 py-16 space-y-10">
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">The short version</h2>
+      <p class="text-lg text-stone-700 leading-relaxed font-medium">
+        PavoPDF does not collect, transmit, or store any user data. Period.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">What PavoPDF does not do</h2>
+      <ul class="space-y-3 text-stone-700">
+        <li class="flex items-start gap-3">
+          <span class="text-teal font-bold text-lg leading-6">&#10005;</span>
+          <span>No analytics or usage tracking of any kind</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-teal font-bold text-lg leading-6">&#10005;</span>
+          <span>No telemetry, crash reports, or error logging sent to any server</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-teal font-bold text-lg leading-6">&#10005;</span>
+          <span>No cloud uploads — your files are never sent anywhere</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-teal font-bold text-lg leading-6">&#10005;</span>
+          <span>No user accounts, registration, or login</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-teal font-bold text-lg leading-6">&#10005;</span>
+          <span>No cookies, fingerprinting, or tracking on this website</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="text-teal font-bold text-lg leading-6">&#10005;</span>
+          <span>No third-party services, SDKs, or advertising integrations</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">Local processing</h2>
+      <p class="text-stone-700 leading-relaxed">
+        All PDF processing — merging, splitting, converting, compressing, editing, signing, redacting, OCR, and every other tool — happens entirely on your computer. Your files are read from your local disk, processed in memory, and written back to your local disk. At no point does any file data leave your machine.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">Open source verification</h2>
+      <p class="text-stone-700 leading-relaxed">
+        PavoPDF is fully open-source under the MIT license. You can inspect the complete source code on
+        <a href="https://github.com/mrrcelino/pavopdf" target="_blank" rel="noopener noreferrer" class="text-teal hover:underline">GitHub</a>
+        to verify that no data collection or network communication occurs.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-bold text-stone-900 mb-4">This website</h2>
+      <p class="text-stone-700 leading-relaxed">
+        The pavopdf.com website is a static site. It does not use cookies, does not run analytics scripts, and does not collect any visitor data.
+      </p>
+    </section>
+
+    <section>
+      <p class="text-sm text-stone-500">
+        Last updated: March 2026
+      </p>
+    </section>
+  </article>
+</BaseLayout>
