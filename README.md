@@ -212,4 +212,6 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 <p align="center">
   <sub>Built with Rust and Svelte. Made offline by design.</sub>
+  <br />
+  <sub>Crafted with <a href="https://claude.ai">Claude</a> by Anthropic.</sub>
 </p>
